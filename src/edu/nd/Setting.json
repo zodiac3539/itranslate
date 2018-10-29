@@ -1,0 +1,16 @@
+{ "zoom" : 1.0,
+  "tesseract": "tesseract.exe",
+  "option": "-l;jpn_ver3;--psm;5;--oem;1",
+  "defaultWidth" : 1200,
+  "defaultHeight" : 900,
+  "font_size": 24,
+  "font_family" : "Malgun Gothic",
+  "lowhsv1": "154,20,0",
+  "highhsv1": "255,255,255",
+  "lowhsv2": "0,0,0",
+  "highhsv2": "255,255,255",
+  "lowhsv3": "0,0,0",
+  "highhsv3": "255,255,255",
+  "kernel_width": 1,
+  "kernel_height": 3 
+}
