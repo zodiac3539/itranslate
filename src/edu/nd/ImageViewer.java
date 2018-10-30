@@ -247,6 +247,17 @@ public class ImageViewer {
                         directionGroup.add(i_normal);
                         directionGroup.add(i_dialate);
                         directionGroup.add(i_erode);
+
+                        JMenu menu4 = new JMenu("OCR");
+                        JMenuItem justocr = new JMenuItem("OCR");
+                        justocr.addActionListener(p);     
+                        justocr.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, 0));
+                        JMenuItem otsu = new JMenuItem("OCR with Ostu");
+                        otsu.addActionListener(p);     
+                        otsu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, 0));
+                        JMenuItem otsui = new JMenuItem("OCR with Ostu Inverse");
+                        otsui.addActionListener(p);     
+                        otsui.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, 0));
                         
                         menu.add(full_zoom);
                         menu.add(width_zoom);
@@ -272,9 +283,15 @@ public class ImageViewer {
                         menu3.add(i_normal);
                         menu3.add(i_dialate);
                         menu3.add(i_erode);
+                        
+                        menu4.add(justocr);
+                        menu4.add(otsu);
+                        menu4.add(otsui);                        
+                        
                         menubar.add(menu);
                         menubar.add(menu2);
                         menubar.add(menu3);
+                        menubar.add(menu4);
                         
                         f.setJMenuBar(menubar);
 

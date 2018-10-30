@@ -33,7 +33,6 @@ public class ImageProcess {
 			System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 			Mat targetimg = BufferedImage2Mat(img);
 			Mat finalimg = Mat.zeros(targetimg.size(), CvType.CV_8UC1);
-			//final Mat maskCopyTo = Mat.zeros(img.getHeight()+2, img.getWidth()+2, CvType.CV_8UC1);
 			Imgproc.threshold(targetimg, finalimg, 0, 255, Imgproc.THRESH_OTSU | Imgproc.THRESH_BINARY);
 			
 			List<MatOfPoint> contours = new ArrayList<>();
@@ -60,19 +59,20 @@ public class ImageProcess {
 		    double epsilon = 0.1*Imgproc.arcLength(new MatOfPoint2f(contour.toArray()),true);
 		    MatOfPoint2f approx = new MatOfPoint2f();
 		    Imgproc.approxPolyDP(new MatOfPoint2f(contour.toArray()),approx,epsilon,true);
-			
+		    
 			RotatedRect rect = Imgproc.minAreaRect(new MatOfPoint2f(contour.toArray()));
 			
-			ret.setRect( rect.boundingRect().x+1, 
-					rect.boundingRect().y+1, 
-					rect.boundingRect().width-2, 
-					rect.boundingRect().height-2);
+			ret.setRect( rect.boundingRect().x+2, 
+					rect.boundingRect().y+2, 
+					rect.boundingRect().width-4, 
+					rect.boundingRect().height-4);
 		
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		return ret;
 	}
+	
 	private Mat postImgProcess(Mat input) {
 
         final Size kernelSize = new Size(ImageViewer.kernel_width, ImageViewer.kernel_width);
@@ -98,8 +98,6 @@ public class ImageProcess {
 			Mat targetimg = BufferedImage2Mat(img);
 			Mat finalimg = Mat.zeros(targetimg.size(), CvType.CV_8UC1);
 			Mat mask = Mat.zeros(img.getHeight()+2, img.getWidth()+2, CvType.CV_8UC1);
-			
-			final Mat maskCopyTo = Mat.zeros(img.getHeight()+2, img.getWidth()+2, CvType.CV_8UC1);
 			Imgproc.threshold(targetimg, finalimg, 0, 255, Imgproc.THRESH_OTSU | Imgproc.THRESH_BINARY_INV);
 			Mat finalimg2 = finalimg.clone();			
 			Imgproc.floodFill(finalimg2, mask, new Point(0,0), new Scalar(255));
@@ -149,7 +147,6 @@ public class ImageProcess {
 			Scalar upperBound = new Scalar(high_h, high_s, high_v);
 			
 			Core.inRange(targetimg, lowBound, upperBound, finalimg);
-			//Core.bitwise_not(finalimg, finalimg);
 			Imgcodecs.imwrite(filename, postImgProcess(finalimg));
 			
 		} catch(Exception ex) {

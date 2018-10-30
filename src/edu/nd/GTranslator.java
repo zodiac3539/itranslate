@@ -33,7 +33,7 @@ public class GTranslator {
 		        translate.translate(
 		            jpn,
 		            TranslateOption.sourceLanguage("ja"),
-		            TranslateOption.targetLanguage("en"));
+		            TranslateOption.targetLanguage("ko"));
 		
 		ret = new String(translation.getTranslatedText().getBytes(), UTF_8);
 		System.out.println("Original: " + new String(jpn.getBytes(), UTF_8));

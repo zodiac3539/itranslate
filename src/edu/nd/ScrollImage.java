@@ -79,6 +79,7 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
     private boolean subtitleOn = false;
     
     public void presentMessage(String _msg) {
+    	_msg = StringUtil.BlackListFilter(_msg);
 		this.msg = _msg;
 		this.canvas.repaint();
 		this.canvas.revalidate();
@@ -94,29 +95,21 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		this.sp.revalidate();	
 		Thread t = new Thread() {
 			public void run() {
-				msg = "";
-				canvas.repaint();
-				canvas.revalidate();
-				sp.repaint();
-				sp.revalidate();
+				try {
+					sleep(3000);
+					msg = "";
+					canvas.repaint();
+					canvas.revalidate();
+					sp.repaint();
+					sp.revalidate();					
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
 		};
-		try {
-			t.wait(3000);
-			t.start();			
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-
+		t.start();
     }
-
-    public void presentMessageOn(String _msg) {
-		this.msg = this.msg + "\n" + _msg;
-		this.canvas.repaint();
-		this.canvas.revalidate();
-		this.sp.repaint();
-		this.sp.revalidate();	
-    }
+    
     
 	@Override
 	public void keyPressed(KeyEvent arg0) {
@@ -170,7 +163,9 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 				msg = "Next file does not exist.";
 				canvas.repaint();
 			}
-		} else if (arg0.getKeyCode() == 88 || //x
+		} 
+		/*
+		else if (arg0.getKeyCode() == 88 || //x
 				arg0.getKeyCode() == 90 || //z
 				arg0.getKeyCode() == 65 ||  //a
 				arg0.getKeyCode() == 83 ||  //s
@@ -179,101 +174,9 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 				arg0.getKeyCode() == 68   //d
 				
 				) {
-		
-			if(!selection.isEmpty()) {
-				presentMessage("OCR...");
-				String consolidated = "";
-				for (ChoiShape targetshape : selection) {
-					int cropx = (int) targetshape.getShape().getBounds2D().getX();
-					int cropy = (int) targetshape.getShape().getBounds2D().getY();
-					int tmp_width = (int) targetshape.getShape().getBounds2D().getWidth();
-					int tmp_height = (int) targetshape.getShape().getBounds2D().getHeight();
-					if(tmp_width == 0) {
-						JOptionPane.showMessageDialog(sp,
-							    "There is something wrong with the selection box.");
-						presentMessage("");
-						return;
-					}
+			doOCR(arg0.getKeyCode());
+		}*/
 
-					System.out.println(""+ cropx + " " + cropy + " " + tmp_width + " " + tmp_height);
-					
-					BufferedImage cropped_target = image.getSubimage(cropx, 
-															  cropy, 
-															  tmp_width, 
-															  tmp_height);
-				
-					BufferedImage cropped = new BufferedImage(tmp_width, tmp_height, BufferedImage.TYPE_INT_ARGB);
-					Graphics gg = cropped.getGraphics();
-					
-					if (arg0.getKeyCode() == 73) gg.setColor(Color.BLACK);
-					else gg.setColor(Color.WHITE);
-					
-					gg.fillRect(0, 0, tmp_width, tmp_height);
-					if(targetshape.getForm() == EnumCollection.SelectionShape.Circle) {
-						gg.setClip(new Ellipse2D.Double(0, 0, tmp_width, tmp_height));
-					} else if (targetshape.getForm() == EnumCollection.SelectionShape.RRectangle) {
-						gg.setClip(new RoundRectangle2D.Double(0, 0, tmp_width, tmp_height, 50, 50));
-					}
-					
-					gg.drawImage(cropped_target, 0, 0, null);
-					String tmpname = System.getProperty("user.home") + File.separator + "temp.png";
-					File outputfile = new File(tmpname);
-					
-					
-					//ImageIO.write(cropped, "jpg", outputfile);
-					JTesseract jt = new JTesseract();
-						
-					if(arg0.getKeyCode() == 65) { //a
-						ip.hsvfilter(cropped, tmpname, 1);
-					} else if(arg0.getKeyCode() == 83) { // s
-						ip.hsvfilter(cropped, tmpname, 2);
-						
-					} else if(arg0.getKeyCode() == 68) { // d
-						ip.hsvfilter(cropped, tmpname, 3);
-
-					} else if(arg0.getKeyCode() == 90) { // z
-						ip.doitWithoutOstu(cropped, tmpname);
-					} else if(arg0.getKeyCode() == 73) { // i
-						ip.doitInverse(cropped, tmpname); 
-						//ip.doitWithoutOstu(cropped, tmpname);
-					} else { // Normally x
-						ip.doit(cropped, tmpname);
-					}
-
-					String ret = jt.doOCR(tmpname);
-					ret = ret.replace("", "");
-					ret = StringUtil.BlackListFilter(ret);
-					consolidated = consolidated + " " +ret;
-				}
-				presentMessage("Translating...");
-				final String target_translate = consolidated;
-				final List<ChoiShape> trlist = new ArrayList<ChoiShape>(selection);
-				selection = new ArrayList<ChoiShape>();
-				redrawAll();
-				GTranslator gt = new GTranslator();
-				Thread t = new Thread() {
-					public void run() {
-						String translated = gt.translate(target_translate);
-						presentMessage( translated );
-						
-						if(translated != null && translated.length() > 0) {
-							TranslateVO vo = new TranslateVO();
-							vo.setX( (int) ( (trlist.get(trlist.size()-1).getShape().getBounds2D().getX())*(1/ImageViewer.zoom) ) );
-							vo.setY( (int) ( (trlist.get(trlist.size()-1).getShape().getBounds2D().getY())*(1/ImageViewer.zoom) ) );
-							vo.setOriginal( target_translate );
-							vo.setTranslated( translated );
-							ttable.addToList(vo);
-							subtitle.repaint();
-							subtitle.revalidate();
-						}
-						
-						redrawAll();					
-					}
-				};
-				t.start();
-
-			} // End of "X"
-		}
 	}
 
 	@Override
@@ -363,7 +266,6 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 				selection.add( vo );			
 			} else if(ImageViewer.defaultShape == EnumCollection.SelectionShape.RRectangle) {
 				Shape rect = new RoundRectangle2D.Double(boxx, boxy, boxwidth, boxheight, 50, 50);
-				//TODO I have no idea about the constructor of so-called "Round Rectangle"
 				ChoiShape vo = new ChoiShape();
 				vo.setShape(rect);
 				vo.setForm(EnumCollection.SelectionShape.RRectangle);
@@ -686,6 +588,7 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
     		x = (int)(x * ImageViewer.zoom);
     		y = (int)(y * ImageViewer.zoom);
     		int original_y = y;
+    		output = StringUtil.reverseEscape(output);
     		output = getLineBreak(output);
     		//System.out.println(output);
     		
@@ -823,6 +726,13 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 			canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 			//sp.setPreferredSize(preferredSize);
 			redrawAll();
+		} else if(target.equals("OCR")) {
+			doOCR(90);
+		} else if(target.equals("OCR with Ostu")) {
+			doOCR(0);
+
+		} else if(target.equals("OCR with Ostu Inverse")) {
+			doOCR(73);
 
 		} else if(target.equals("Load Subtitle")) {
 			if(subtitleOn) {
@@ -911,6 +821,97 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		return ret;
 	}
 	
+	public void doOCR(int arg) {
+		if(selection.isEmpty()) {
+			presentSysMessage("Please select the shape first.");
+			return;
+		}
+		presentMessage("OCR...");
+		final List<ChoiShape> trlist = new ArrayList<ChoiShape>(selection);
+		selection = new ArrayList<ChoiShape>();
+
+		Thread t1 = new Thread() {
+			public void run() {
+				String consolidated = "";
+				for (ChoiShape targetshape : trlist) {
+					int cropx = (int) targetshape.getShape().getBounds2D().getX();
+					int cropy = (int) targetshape.getShape().getBounds2D().getY();
+					int tmp_width = (int) targetshape.getShape().getBounds2D().getWidth();
+					int tmp_height = (int) targetshape.getShape().getBounds2D().getHeight();
+					if(tmp_width == 0) {
+						JOptionPane.showMessageDialog(sp,
+							    "There is something wrong with the selection box.");
+						presentMessage("");
+						return;
+					}
+
+					BufferedImage cropped_target = image.getSubimage(cropx, 
+															  cropy, 
+															  tmp_width, 
+															  tmp_height);
+				
+					BufferedImage cropped = new BufferedImage(tmp_width, tmp_height, BufferedImage.TYPE_INT_ARGB);
+					Graphics gg = cropped.getGraphics();
+					
+					if (arg == 73) gg.setColor(Color.BLACK); //I
+					else gg.setColor(Color.WHITE);
+					
+					gg.fillRect(0, 0, tmp_width, tmp_height);
+					if(targetshape.getForm() == EnumCollection.SelectionShape.Circle) {
+						gg.setClip(new Ellipse2D.Double(0, 0, tmp_width, tmp_height));
+					} else if (targetshape.getForm() == EnumCollection.SelectionShape.RRectangle) {
+						gg.setClip(new RoundRectangle2D.Double(0, 0, tmp_width, tmp_height, 50, 50));
+					}
+					
+					gg.drawImage(cropped_target, 0, 0, null);
+					String tmpname = System.getProperty("user.home") + File.separator + "temp.png";
+					JTesseract jt = new JTesseract();
+						
+					if(arg == 65) { //a
+						ip.hsvfilter(cropped, tmpname, 1);
+					} else if(arg == 83) { // s
+						ip.hsvfilter(cropped, tmpname, 2);
+						
+					} else if(arg == 68) { // d
+						ip.hsvfilter(cropped, tmpname, 3);
+
+					} else if(arg == 90) { // z
+						ip.doitWithoutOstu(cropped, tmpname);
+					} else if(arg == 73) { // i
+						ip.doitInverse(cropped, tmpname); 
+						//ip.doitWithoutOstu(cropped, tmpname);
+					} else { // Normally x
+						ip.doit(cropped, tmpname);
+					}
+
+					String ret = jt.doOCR(tmpname);
+					ret = ret.replace("", "");
+					ret = StringUtil.BlackListFilter(ret);
+					consolidated = consolidated + " " +ret;
+				}
+				presentMessage("Translating...");
+				final String target_translate = consolidated;
+				redrawAll();
+				GTranslator gt = new GTranslator();
+				String translated = gt.translate(target_translate);
+				presentMessage( translated );
+				
+				if(translated != null && translated.length() > 0) {
+					TranslateVO vo = new TranslateVO();
+					vo.setX( (int) ( (trlist.get(trlist.size()-1).getShape().getBounds2D().getX())*(1/ImageViewer.zoom) ) );
+					vo.setY( (int) ( (trlist.get(trlist.size()-1).getShape().getBounds2D().getY())*(1/ImageViewer.zoom) ) );
+					vo.setOriginal( target_translate );
+					vo.setTranslated( translated );
+					ttable.addToList(vo);
+					subtitle.repaint();
+					subtitle.revalidate();
+				}
+				
+				redrawAll();				
+			}
+		};
+		t1.start();
+	}
 	public void redrawAll() {
 		canvas.repaint();
 		canvas.revalidate();
