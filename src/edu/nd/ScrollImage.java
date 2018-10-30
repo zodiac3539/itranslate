@@ -49,7 +49,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 
-public class ScrollImage extends JPanel implements KeyListener, ActionListener  {
+public class ScrollImage extends JPanel implements ActionListener  {
     private JFrame subtitle = null;
 	private static final long serialVersionUID = 1L;
     private BufferedImage originalimage;
@@ -70,16 +70,16 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
     private ImageProcess ip = new ImageProcess();
     final static float dash1[] = {10.0f};
     final static BasicStroke thickStroke =
-        new BasicStroke(2.0f);
+        new BasicStroke(2.5f);
     final static BasicStroke normalStroke =
             new BasicStroke(1.0f);
     private TrasnlateTable ttable = new TrasnlateTable();
-    
-    private boolean layover = false;
+
     private boolean subtitleOn = false;
+    private JScrollPane jtableScroll = null;
     
     public void presentMessage(String _msg) {
-    	_msg = StringUtil.BlackListFilter(_msg);
+    	_msg = StringUtil.reverseEscape(_msg);
 		this.msg = _msg;
 		this.canvas.repaint();
 		this.canvas.revalidate();
@@ -109,84 +109,7 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		};
 		t.start();
     }
-    
-    
-	@Override
-	public void keyPressed(KeyEvent arg0) {
-		System.out.println(arg0.getKeyCode());
-		if(arg0.getKeyCode() == 82) { //R - revert to initial state. 
-			selection = new ArrayList<ChoiShape>();
-			presentMessage("");
-		}
-		else if(arg0.getKeyCode() == 40 || arg0.getKeyCode() == 38) {
-			if(arg0.getKeyCode() == 40) {
-				sp.getVerticalScrollBar().setValue(sp.getVerticalScrollBar().getValue() + 35);
-			} else {
-				int newvertscroll = sp.getVerticalScrollBar().getValue() - 35;
-				if(newvertscroll < 0) newvertscroll = 0;
-				sp.getVerticalScrollBar().setValue(newvertscroll);
-			}
-		}
-		else if(arg0.getKeyCode() == 10) { //Enter - JSON SAVE
-			File current = filelist.get(crtnum);
-			String fname = current.getName() + ".json";
-			String dir = current.getParent();
-			
-			String fullname = dir + File.separator + fname;
-			
-			System.out.println("Targetfile: " + fullname);
-			int status = ttable.save( fullname );
-			if(status == 0) presentSysMessage("Saved.");
-			else if (status == -2) presentSysMessage("Your translation list is empty.");
-			
-		}
-		else if(arg0.getKeyCode() == 32) { //SPACE - Next File
-			subtitleOn = false;
-			selection = new ArrayList<ChoiShape>();
-			msg = "";
-			crtnum ++;
-			if(crtnum >= filelist.size()) {
-				this.presentMessage("End of the file list.");
-				return;
-			}
-			File next = filelist.get(crtnum);
-			try {
-				//this.image = ImageIO.read(next);
-				File tmp = this.fileload(next.getPath());
-				canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
-				canvas.revalidate();
-				canvas.repaint();
-				sp.revalidate();
-				sp.getVerticalScrollBar().setValue(0);
-			} catch(Exception ex) {
-				System.err.println("File doesn't exist.");
-				msg = "Next file does not exist.";
-				canvas.repaint();
-			}
-		} 
-		/*
-		else if (arg0.getKeyCode() == 88 || //x
-				arg0.getKeyCode() == 90 || //z
-				arg0.getKeyCode() == 65 ||  //a
-				arg0.getKeyCode() == 83 ||  //s
-				arg0.getKeyCode() == 73 ||  //i
-				
-				arg0.getKeyCode() == 68   //d
-				
-				) {
-			doOCR(arg0.getKeyCode());
-		}*/
-
-	}
-
-	@Override
-	public void keyReleased(KeyEvent arg0) {
-	}
-
-	@Override
-	public void keyTyped(KeyEvent arg0) {
-	}
-    	
+        	
     public class MoveListener implements MouseMotionListener {
 
 		@Override
@@ -200,29 +123,19 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		}
 
 		@Override
-		public void mouseMoved(MouseEvent arg0) {
-			
-		}
+		public void mouseMoved(MouseEvent arg0) { }
     	
     }
     public class SpecialListener implements MouseListener {
 
 		@Override
-		public void mouseEntered(MouseEvent arg0) {
-			
-		}
+		public void mouseEntered(MouseEvent arg0) {	}
 
 		@Override
-		public void mouseExited(MouseEvent arg0) {
-			
-		}
+		public void mouseExited(MouseEvent arg0) { }
 
 		@Override
 		public void mousePressed(MouseEvent arg0) {
-			//System.out.println("mouse pressed");
-			//System.out.println(arg0.getX());
-			//System.out.println(arg0.getY());
-			
 			startX = arg0.getX();
 			startY = arg0.getY();
 			global_clicked = true;
@@ -231,9 +144,6 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 
 		@Override
 		public void mouseReleased(MouseEvent arg0) {
-			//System.out.println("mouse released");
-			//System.out.println(arg0.getX());
-			//System.out.println(arg0.getY());
 			global_clicked = false;
 			
 			int boxx = 0;
@@ -306,13 +216,12 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
         
         ttable.buildListFromJSON( filename + ".json" );
     	try {
-        	//System.out.println(filename + " is presented.");
         	//presentSysMessage(filename + " is presented.");
             this.originalimage = ImageIO.read(current);
             int w = (int)(originalimage.getWidth() * ImageViewer.zoom);
             int h = (int)(originalimage.getHeight() * ImageViewer.zoom);
             
-            if( ImageViewer.zoom != 0.0 ) {
+            if( ImageViewer.zoom != 1.0 ) {
                 image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
                 AffineTransform at = new AffineTransform();
                 at.scale(ImageViewer.zoom, ImageViewer.zoom);
@@ -322,7 +231,12 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
             } else {
             	image = originalimage.getSubimage(0, 0, w, h);
             }
-            
+            if(subtitle != null) {
+            	jtableScroll.repaint();
+            	jtableScroll.revalidate();
+            	subtitle.repaint();
+            	subtitle.revalidate();
+            }
         }catch(IOException ex) {
             ex.printStackTrace();
         	//Logger.getLogger(ScrollImageTest.class.getName()).log(Level.SEVERE, null, ex);
@@ -342,10 +256,10 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 			File current = fileload(img);
 			folder = new File(current.getParent());
 			if(!folder.isDirectory()) {
-				System.err.print(current.getParent() + " is not directory!");
+				Logger.err("" + current.getParent() + " is not directory!", null);
 				return;
 			}
-			System.out.println("Current Path: " + current.getParent());
+			Logger.debug( "Current Path: " + current.getParent() );
 			
 	        File[] listOfFiles = folder.listFiles((
 	        new FilenameFilter() {
@@ -374,12 +288,14 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
         table.setRowHeight(50);
 		final JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem deleteItem = new JMenuItem("Delete");
-        JMenuItem layover = new JMenuItem("See in the picture.");
-
+        JMenuItem copyToClipboard = new JMenuItem("Copy the original sentence to clipboard.");
+        JMenuItem y50 = new JMenuItem("y=y+50");
+        JMenuItem x50 = new JMenuItem("x=x+50");
+        JMenuItem xm50 = new JMenuItem("x=x-50");
+        
         deleteItem.addActionListener(new ActionListener()   {
         	@Override
             public void actionPerformed(ActionEvent e) {
-                //System.out.println( table.getSelectedRow() );
                 ttable.remove(table.getSelectedRow());
                 table.repaint();
                 table.revalidate();
@@ -390,13 +306,46 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 
         });
         
+        copyToClipboard.addActionListener(new ActionListener()   {
+        	@Override
+            public void actionPerformed(ActionEvent e) {
+        		ttable.copyToClipboard(table.getSelectedRow());
+        	}
+        });
+        x50.addActionListener(new ActionListener()   {
+        	@Override
+            public void actionPerformed(ActionEvent e) {
+        		ttable.reposition(table.getSelectedRow(), 50, 0);
+        		redrawAll();
+        	}
+        });
+        y50.addActionListener(new ActionListener()   {
+           	@Override
+            public void actionPerformed(ActionEvent e) {
+        		ttable.reposition(table.getSelectedRow(), 0, 50);
+        		redrawAll();
+           	}
+        });
+        
+        xm50.addActionListener(new ActionListener()   {
+           	@Override
+            public void actionPerformed(ActionEvent e) {
+        		ttable.reposition(table.getSelectedRow(), -50, 0);
+        		redrawAll();
+           	}
+        });
+        
         popupMenu.add(deleteItem);    
-        popupMenu.add(layover);
-        JScrollPane scrollPane2 = new JScrollPane(table);
+        popupMenu.add(copyToClipboard);
+        popupMenu.add(x50);
+        popupMenu.add(y50);
+        popupMenu.add(xm50);
+        
+        jtableScroll = new JScrollPane(table);
 		table.setFillsViewportHeight(true);
 		table.setComponentPopupMenu(popupMenu);
 		 
-		subtitle.add(scrollPane2);
+		subtitle.add(jtableScroll);
 		subtitle.setTitle("Subtitle management");
 		subtitle.setBounds( 50, 50, 600, 600 );
 		subtitle.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -404,7 +353,7 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		
         this.canvas = new JPanel() {
         
-            private static final long serialVersionUID1 = 1L;
+            private static final long serialVersionUID = 12314L;
             @Override
             protected void paintComponent(Graphics g) {
             	Graphics2D g2d = (Graphics2D) g;
@@ -432,7 +381,6 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
                 }
                 if(!msg.equals("")) {
                 	Font myFont = ImgFront.getFont( ImageViewer.font_size );
-
                 	int msgx = 5 + sp.getHorizontalScrollBar().getValue();
                 	int msyy = 40 + sp.getVerticalScrollBar().getValue();
                 	g2d.setFont(myFont);
@@ -445,7 +393,7 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
                 		g2d.drawString(msg, msgx+i, msyy);
                 		g2d.drawString(msg, msgx, msyy+i);
                 	}
-                	g2d.setColor(Color.BLACK);
+                	g2d.setColor( ImageViewer.getFontColor() );
                 	g2d.drawString(msg, msgx, msyy);
 
                 }
@@ -577,10 +525,10 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		
 		//String fullname = dir + File.separator + fname;
 		
-    	Iterator it = ttable.getTranslateList().iterator();
+    	Iterator<TranslateVO> it = ttable.getTranslateList().iterator();
     	getSubtitleFont(g2d);
     	while(it.hasNext()) {
-    		TranslateVO obj = (TranslateVO) it.next();
+    		TranslateVO obj = it.next();
     		String output = obj.getTranslated();
     		int x = obj.getX();
     		int y = obj.getY();
@@ -590,14 +538,12 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
     		int original_y = y;
     		output = StringUtil.reverseEscape(output);
     		output = getLineBreak(output);
-    		//System.out.println(output);
     		
         	for(int i=1;i<=3;i++) {
         		y = original_y;
         		for (String line : output.split("\n")) {
                 	g2d.setColor(new Color(200, 200, 200, 70));
                 	int totalwidth = 0;
-                	System.out.println( );
                 	for( int tmpWidth: g2d.getFontMetrics().getWidths() ) {
                 		if(tmpWidth > totalwidth) {
                 			totalwidth = tmpWidth;
@@ -621,7 +567,7 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
         		}
         		
         	}
-        	g2d.setColor(Color.BLACK);
+        	g2d.setColor( ImageViewer.getFontColor() );
         	y = original_y;
         	for (String line : output.split("\n")) {
         		g2d.drawString(line, x, y);
@@ -685,7 +631,7 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		}
 	
 		Rectangle2D bounds = ip.findContour(cropped_target);
-		System.out.println(bounds.getWidth() + " " + bounds.getHeight());
+		Logger.debug("" + bounds.getWidth() + " " + bounds.getHeight());
 		ChoiShape cs = selection.get(selection.size()-1);
 		selection.set(selection.size()-1, reboundary(cs, bounds));
 		redrawAll();
@@ -699,15 +645,59 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		if(target.equals("Width")) {
 			if( originalimage.getWidth() > ImageViewer.getMainFrameWidth()) {
 				ImageViewer.zoom = (double)(ImageViewer.getMainFrameWidth()-50) / (double) originalimage.getWidth();
-				System.out.println( ImageViewer.getMainFrameWidth() );
-				System.out.println( originalimage.getWidth() );
-				System.out.println(ImageViewer.zoom);
+				Logger.debug( "" + ImageViewer.getMainFrameWidth() );
+				Logger.debug( "" + originalimage.getWidth() );
+				Logger.debug( "" + ImageViewer.zoom);
 				//filereload
 				File next = filelist.get(crtnum);
 				File tmp = this.fileload(next.getPath());
 				canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 				//sp.setPreferredSize(preferredSize);
 				redrawAll();
+			}
+		} else if(target.equals("Next file")) {
+			selection = new ArrayList<ChoiShape>();
+			msg = "";
+			crtnum ++;
+			if(crtnum >= filelist.size()) {
+				this.presentMessage("End of the file list.");
+				crtnum = filelist.size() - 1;
+				return;
+			}
+			File next = fileload(filelist.get(crtnum).getPath());
+			try {
+				this.image = ImageIO.read(next);
+				canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+				canvas.revalidate();
+				canvas.repaint();
+				sp.revalidate();
+				sp.getVerticalScrollBar().setValue(0);
+			} catch(Exception ex) {
+				System.err.println("File doesn't exist.");
+				msg = "Next file does not exist.";
+				canvas.repaint();
+			}			
+		} else if(target.equals("Previous file")) {
+			selection = new ArrayList<ChoiShape>();
+			msg = "";
+			crtnum = crtnum - 1;
+			if(crtnum < 0) {
+				this.presentMessage("Head of the file list.");
+				crtnum = 0;
+				return;
+			}
+			File next = fileload(filelist.get(crtnum).getPath());
+			try {
+				this.image = ImageIO.read(next);
+				canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+				canvas.revalidate();
+				canvas.repaint();
+				sp.revalidate();
+				sp.getVerticalScrollBar().setValue(0);
+			} catch(Exception ex) {
+				Logger.err("File doesn't exist.", ex);
+				msg = "Next file does not exist.";
+				canvas.repaint();
 			}
 		} else if(target.equals("Zoom out")) {
 			ImageViewer.zoom = ImageViewer.zoom - 0.05;
@@ -726,22 +716,36 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 			canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 			//sp.setPreferredSize(preferredSize);
 			redrawAll();
+		} else if(target.equals("Move up")) {
+			int newvertscroll = sp.getVerticalScrollBar().getValue() - 35;
+			if(newvertscroll < 0) newvertscroll = 0;
+			sp.getVerticalScrollBar().setValue(newvertscroll);			
+		} else if(target.equals("Move down")) {
+			sp.getVerticalScrollBar().setValue(sp.getVerticalScrollBar().getValue() + 35);
 		} else if(target.equals("OCR")) {
 			doOCR(90);
 		} else if(target.equals("OCR with Ostu")) {
 			doOCR(0);
-
 		} else if(target.equals("OCR with Ostu Inverse")) {
 			doOCR(73);
-
-		} else if(target.equals("Load Subtitle")) {
-			if(subtitleOn) {
-				subtitleOn = false;
-			} else {
-				subtitleOn = true;				
-			}
-			//System.out.println("Let's draw!");
+		} else if(target.equals("Show subtitle")) {
+			subtitleOn = true;
 			redrawAll();
+		} else if(target.equals("Hide subtitle")) {
+			subtitleOn = false;
+			redrawAll();
+		} else if(target.equals("Save subtitle")) {
+			File current = filelist.get(crtnum);
+			String fname = current.getName() + ".json";
+			String dir = current.getParent();
+			
+			String fullname = dir + File.separator + fname;
+			
+			System.out.println("Targetfile: " + fullname);
+			int status = ttable.save( fullname );
+			if(status == 0) presentSysMessage("Saved.");
+			else if (status == -2) presentSysMessage("Your translation list is empty.");
+
 		} else if(target.equals("Box")) {
 			ImageViewer.defaultShape = EnumCollection.SelectionShape.Box;
 		} else if(target.equals("Circle")) {
@@ -751,11 +755,22 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 		} else if (target.equals("Find contour")) {
 			System.out.println("Find contour is called");
 			findContour();
-
+		} else if (target.equals("Cancel selection")) {
+			selection = new ArrayList<ChoiShape>();
+			presentMessage("");
+			redrawAll();
 		} else if(target.equals("Expand left")
 				|| target.equals("Expand up")
 				|| target.equals("Expand down")				
-				|| target.equals("Expand right")) {
+				|| target.equals("Expand right")
+			    || target.equals("Expand right")
+			    || target.equals("Shrink right")			    
+			    || target.equals("Shrink left")			    
+			) {
+			//=============================================================================================
+			//================ Manipulating selection area start ==========================================
+			//=============================================================================================
+
 			if(!selection.isEmpty()) {
 				ChoiShape shape = selection.get(selection.size()-1);
 				
@@ -769,8 +784,13 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 				if(target.equals("Expand left")) {
 					tmpX = tmpX - 5;
 					tmpWidth = tmpWidth + 5;					
+				} else if(target.equals("Shrink left")) {
+					tmpX = tmpX + 5;
+					tmpWidth = tmpWidth - 5;	
 				} else if (target.equals("Expand right")) {
 					tmpWidth = tmpWidth + 5;
+				} else if (target.equals("Shrink right")) {
+					tmpWidth = tmpWidth - 5;
 				} else if (target.equals("Expand up")) {
 					tmpY = tmpY - 5;
 					double prevTmpHeight = tmpHeight;
@@ -796,10 +816,14 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 				vo.setForm(shape.getForm());
 				selection.set(selection.size()-1, vo);
 				redrawAll();
+
 			}
-			
-		}
-	}
+			//=============================================================================================
+			//================ Manipulating selection area end ==========================================
+			//=============================================================================================
+
+		} // end if for target string selection
+	} // end of actionPerformed(ActionEvent)
 	
 	private ChoiShape reboundary(ChoiShape cs, Rectangle2D bounds) {
 		ChoiShape ret = new ChoiShape();
@@ -871,10 +895,8 @@ public class ScrollImage extends JPanel implements KeyListener, ActionListener  
 						ip.hsvfilter(cropped, tmpname, 1);
 					} else if(arg == 83) { // s
 						ip.hsvfilter(cropped, tmpname, 2);
-						
 					} else if(arg == 68) { // d
 						ip.hsvfilter(cropped, tmpname, 3);
-
 					} else if(arg == 90) { // z
 						ip.doitWithoutOstu(cropped, tmpname);
 					} else if(arg == 73) { // i

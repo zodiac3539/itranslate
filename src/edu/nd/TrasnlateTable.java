@@ -1,12 +1,14 @@
 package edu.nd;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
 import org.json.JSONArray;
@@ -14,20 +16,30 @@ import org.json.JSONObject;
 
 
 public class TrasnlateTable extends AbstractTableModel {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1620446442626241316L;
 	private String[] columnNames = {"Num",
             "X",
             "Y",
             "original",
             "translated"};
 	private List<TranslateVO> tlist = new LinkedList<TranslateVO>();
+	private boolean isChange = false;
 	
 	public TrasnlateTable() {
 		super();
 	}
 	
+	public boolean isChange() {
+		return isChange;
+	}
+	
 	public void addToList(TranslateVO vo) {
 		vo.setNum(tlist.size()+1);
 		tlist.add(vo);
+		isChange = true;
 	}
 	
 	public TranslateVO getVO(int num) {
@@ -36,6 +48,7 @@ public class TrasnlateTable extends AbstractTableModel {
 	
 	public void remove(int num) {
 		tlist.remove(tlist.get(num));
+		isChange = true;
 	}
 	
 	public String getColumnName(int col) {
@@ -50,6 +63,7 @@ public class TrasnlateTable extends AbstractTableModel {
 	}
 	
 	public int buildListFromJSON(String filename) {
+		isChange = false;
 		tlist = new LinkedList<TranslateVO>();
 		
     	File jsonfile = new File(filename);
@@ -131,12 +145,15 @@ public class TrasnlateTable extends AbstractTableModel {
 			fos.write(strb.toString().getBytes());
 			fos.flush();
 			fos.close();
+			isChange = false;
+			Logger.debug("Successfully saved: " + filename);
 			return 0;
 		} catch(Exception ex) {
-			ex.printStackTrace();
-			
+			Logger.err(ex.getMessage(), ex);
 		}
+		
 		return -1;
+		
 	}
 
 
@@ -152,7 +169,19 @@ public class TrasnlateTable extends AbstractTableModel {
 		// TODO Auto-generated method stub
 		return tlist.size();
 	}
-
+	public void copyToClipboard(int row) {
+		String myString = tlist.get(row).getOriginal();
+		StringSelection stringSelection = new StringSelection(myString);
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		clipboard.setContents(stringSelection, null);
+	}
+	
+	public void reposition(int row, int x, int y) {
+		int newx = tlist.get(row).getX() + x;
+		if (newx < 0) newx = 0;
+		tlist.get(row).setX(newx);
+		tlist.get(row).setY(tlist.get(row).getY() + y);		
+	}
 
 	@Override
 	public Object getValueAt(int row, int column) {

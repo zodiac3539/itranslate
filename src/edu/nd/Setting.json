@@ -12,5 +12,5 @@
   "lowhsv3": "0,0,0",
   "highhsv3": "255,255,255",
   "kernel_width": 1,
-  "kernel_height": 3 
+  "kernel_height": 3
 }

@@ -26,6 +26,6 @@ Please put them in the same folder.
 
 How to execute
 Create a bat file.
-java -classpath ".\" nd.edu.ImageViewer
+java -classpath ".\*" edu.nd.ImageViewer
 
 ![Example image1](http://www.mbaprogrammer.com/upload/ttt1.png)

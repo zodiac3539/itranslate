@@ -1,5 +1,6 @@
 package edu.nd;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -33,16 +34,16 @@ import javafx.scene.image.ImageView;
 
 public class ImageViewer {
 	public static boolean autocontour = false;
-	public static String tesseract = "";
-	public static String option = "";
-	public static String lowhsv1 = "";
-	public static String highhsv1 = "";
-	public static String lowhsv2 = "";
-	public static String highhsv2 = "";
-	public static String lowhsv3 = "";
-	public static String highhsv3 = "";
-	public static int default_width = 0;
-	public static int default_height = 0;
+	public static String tesseract = "tesseract.exe";
+	public static String option = "-l;jpn";
+	public static String lowhsv1 = "0,0,0";
+	public static String highhsv1 = "255,255,255";
+	public static String lowhsv2 = "0,0,0";
+	public static String highhsv2 = "255,255,255";
+	public static String lowhsv3 = "0,0,0";
+	public static String highhsv3 = "255,255,255";
+	public static int default_width = 1200;
+	public static int default_height = 800;
     public static JFrame f = new JFrame("Imageviewer");
     public static ScrollImage p = null;
     public static double zoom = 1.0;
@@ -53,9 +54,13 @@ public class ImageViewer {
     public static int image_iterate = 1;
     
     public static int font_size = 0;
-    public static String font_family = "";
+    public static String font_family = "Arial";
     
     public static List<AmbiguousVO> ambiguous = new ArrayList<AmbiguousVO>();
+    public static String fromlan = "ja";
+    public static String tolan = "en";    
+    public static int linebreak = 7;
+    public static String fontcolor = "#000000";
    
     public static void checkAndLoadAmbiguous() {
 		String settingFile = System.getProperty("user.home") + File.separator + "ambiguous.json";
@@ -105,24 +110,36 @@ public class ImageViewer {
 		}
     	
     }
+    
+    public static Color getFontColor() 
+    {
+    	String hex = fontcolor;
+        hex = hex.replace("#", "");
+        switch (hex.length()) {
+            case 6:
+                return new Color(
+                Integer.valueOf(hex.substring(0, 2), 16),
+                Integer.valueOf(hex.substring(2, 4), 16),
+                Integer.valueOf(hex.substring(4, 6), 16));
+            case 8:
+                return new Color(
+                Integer.valueOf(hex.substring(0, 2), 16),
+                Integer.valueOf(hex.substring(2, 4), 16),
+                Integer.valueOf(hex.substring(4, 6), 16),
+                Integer.valueOf(hex.substring(6, 8), 16));
+        }
+        return null;
+    }
+    
 	public static void checkAndLoadInit() {
 		String settingFile = System.getProperty("user.home") + File.separator + "Setting.json";
 		File file = new File(settingFile);
 		if(!file.exists()) {
 			try {
-				InputStream is = Test.class.getResourceAsStream("./Setting.json");
-				
-				BufferedReader br = new BufferedReader(new InputStreamReader(is));
-				String line = "";
-				String ks = "";
-				while( (line = br.readLine()) != null) {
-					ks = ks + line;
-				}
-				br.close();
-				is.close();
+				CreateInit initSetting = new CreateInit();
 				
 				FileOutputStream fos = new FileOutputStream(file);
-				fos.write(ks.getBytes());
+				fos.write(initSetting.retSetting().getBytes());
 				fos.flush();
 				fos.close();
 
@@ -148,7 +165,16 @@ public class ImageViewer {
 			font_family = jobj.getString("font_family");
 			kernel_width = jobj.getInt("kernel_width");
 			kernel_height = jobj.getInt("kernel_height");
+			image_iterate = jobj.getInt("repeat");
+
+			fromlan = jobj.getString("fromlan");
+			tolan = jobj.getString("tolan");
+			linebreak = jobj.getInt("linebreak");
+			fontcolor = jobj.getString("fontcolor");
 		} catch(Exception ex) {
+			
+			System.err.println("====== Problem in reading setting file! ======");
+			System.err.println("====== Please check Settings.json in your home directory! ======");			
 			ex.printStackTrace();
 		}
 	}
@@ -176,24 +202,29 @@ public class ImageViewer {
         	    		p = new ScrollImage(files[i].getCanonicalPath());
         	    		//JFrame f = new JFrame("Imageviewer");
                         f.setContentPane(p);
-                        f.addKeyListener(p);
+                      
                         JMenuBar menubar = new JMenuBar();
+                        
+                        
+                        JMenu menu0 = new JMenu("File");
+                        JMenuItem next_file = new JMenuItem("Next file");
+                        next_file.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
+                        next_file.addActionListener(p);
+                        JMenuItem previous_file = new JMenuItem("Previous file");
+                        previous_file.addActionListener(p);
+                        
                         JMenu menu = new JMenu("Menu");
                         JMenuItem full_zoom = new JMenuItem("Full");
                         full_zoom.addActionListener(p);
                         JMenuItem width_zoom = new JMenuItem("Width");
                         width_zoom.addActionListener(p);
                         JMenuItem zoomin = new JMenuItem("Zoom in");
-                        zoomin.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, ActionEvent.CTRL_MASK));
+                        zoomin.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, 0));
                         zoomin.addActionListener(p);
                         
                         JMenuItem zoomout = new JMenuItem("Zoom out");
-                        zoomout.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, ActionEvent.CTRL_MASK));
+                        zoomout.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, 0));
                         zoomout.addActionListener(p);
-
-                        JMenuItem st= new JMenuItem("Load Subtitle");
-                        st.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.CTRL_MASK));
-                        st.addActionListener(p);
 
                         JMenu menu2 = new JMenu("Selection");
                         JMenuItem box = new JMenuItem("Box");
@@ -220,10 +251,21 @@ public class ImageViewer {
                         JMenuItem downex = new JMenuItem("Expand down");
                         downex.addActionListener(p);     
                         downex.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
+                        JMenuItem lefts = new JMenuItem("Shrink left");
+                        lefts.addActionListener(p);
+                        lefts.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_OPEN_BRACKET, ActionEvent.SHIFT_MASK));
+                        JMenuItem rights = new JMenuItem("Shrink right");
+                        rights.addActionListener(p);     
+                        rights.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_CLOSE_BRACKET, ActionEvent.SHIFT_MASK));
 
+                        
                         JMenuItem autobound = new JMenuItem("Find contour");
                         autobound.addActionListener(p);     
                         autobound.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, ActionEvent.CTRL_MASK));
+
+                        JMenuItem cselection = new JMenuItem("Cancel selection");
+                        cselection.addActionListener(p);     
+                        cselection.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
 
                         MenuSelection imp = new MenuSelection();
                         ButtonGroup directionGroup1 = new ButtonGroup();
@@ -259,12 +301,32 @@ public class ImageViewer {
                         otsui.addActionListener(p);     
                         otsui.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, 0));
                         
+                        JMenu menu5 = new JMenu("Subtitle");
+                        JMenuItem showsubtitle = new JMenuItem("Show subtitle");
+                        showsubtitle.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+                        showsubtitle.addActionListener(p);
+                        JMenuItem hidesubtitle = new JMenuItem("Hide subtitle");
+                        hidesubtitle.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK));
+                        hidesubtitle.addActionListener(p);
+                        JMenuItem savesubtitle = new JMenuItem("Save subtitle");
+                        savesubtitle.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0));
+                        savesubtitle.addActionListener(p);
+                        
+                        JMenu menu6 = new JMenu("Scroll");
+                        JMenuItem moveup = new JMenuItem("Move up");
+                        moveup.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0));
+                        moveup.addActionListener(p);
+                        JMenuItem movedown = new JMenuItem("Move down");
+                        movedown.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0));
+                        movedown.addActionListener(p);
+                        
+                        menu0.add(next_file);
+                        menu0.add(previous_file);
+                        
                         menu.add(full_zoom);
                         menu.add(width_zoom);
                         menu.add(zoomin);
                         menu.add(zoomout);
-                        menu.addSeparator();
-                        menu.add(st);
                         
                         menu2.add(box);
                         menu2.add(circle);
@@ -275,10 +337,15 @@ public class ImageViewer {
                         menu2.add(upex);
                         menu2.add(downex);
                         menu2.addSeparator();
+                        menu2.add(lefts);
+                        menu2.add(rights);                        
+                        menu2.addSeparator();                        
                         menu2.add(autobound);
                         menu2.addSeparator();
                         menu2.add(autoon);
                         menu2.add(autooff);
+                        menu2.addSeparator();
+                        menu2.add(cselection);
                         
                         menu3.add(i_normal);
                         menu3.add(i_dialate);
@@ -288,10 +355,20 @@ public class ImageViewer {
                         menu4.add(otsu);
                         menu4.add(otsui);                        
                         
+                        menu5.add(showsubtitle);
+                        menu5.add(hidesubtitle);
+                        menu5.add(savesubtitle);
+                        
+                        menu6.add(moveup);
+                        menu6.add(movedown);
+                        
+                        menubar.add(menu0);
                         menubar.add(menu);
                         menubar.add(menu2);
                         menubar.add(menu3);
                         menubar.add(menu4);
+                        menubar.add(menu5);                        
+                        menubar.add(menu6); 
                         
                         f.setJMenuBar(menubar);
 

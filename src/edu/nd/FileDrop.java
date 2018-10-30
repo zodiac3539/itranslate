@@ -8,67 +8,18 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
 
-/**
- * This class makes it easy to drag and drop files from the operating
- * system to a Java program. Any <tt>java.awt.Component</tt> can be
- * dropped onto, but only <tt>javax.swing.JComponent</tt>s will indicate
- * the drop event with a changed border.
- * <p/>
- * To use this class, construct a new <tt>FileDrop</tt> by passing
- * it the target component and a <tt>Listener</tt> to receive notification
- * when file(s) have been dropped. Here is an example:
- * <p/>
- * <code><pre>
- *      JPanel myPanel = new JPanel();
- *      new FileDrop( myPanel, new FileDrop.Listener()
- *      {   public void filesDropped( java.io.File[] files )
- *          {   
- *              // handle file drop
- *              ...
- *          }   // end filesDropped
- *      }); // end FileDrop.Listener
- * </pre></code>
- * <p/>
- * You can specify the border that will appear when files are being dragged by
- * calling the constructor with a <tt>javax.swing.border.Border</tt>. Only
- * <tt>JComponent</tt>s will show any indication with a border.
- * <p/>
- * You can turn on some debugging features by passing a <tt>PrintStream</tt>
- * object (such as <tt>System.out</tt>) into the full constructor. A <tt>null</tt>
- * value will result in no extra debugging information being output.
- * <p/>
- *
- * <p>I'm releasing this code into the Public Domain. Enjoy.
- * </p>
- * <p><em>Original author: Robert Harder, rharder@usa.net</em></p>
- * <p>2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.</p>
- *
- * @author  Robert Harder
- * @author  rharder@users.sf.net
- * @version 1.0.1
- */
+
 public class FileDrop
 {
     private transient javax.swing.border.Border normalBorder;
     private transient java.awt.dnd.DropTargetListener dropListener;
     
     
-    /** Discover if the running JVM is modern enough to have drag and drop. */
     private static Boolean supportsDnD;
     
     // Default border color
     private static java.awt.Color defaultBorderColor = new java.awt.Color( 0f, 0f, 1f, 0.25f );
     
-    /**
-     * Constructs a {@link FileDrop} with a default light-blue border
-     * and, if <var>c</var> is a {@link java.awt.Container}, recursively
-     * sets all elements contained within as drop targets, though only
-     * the top level container will change borders.
-     *
-     * @param c Component on which files will be dropped.
-     * @param listener Listens for <tt>filesDropped</tt>.
-     * @since 1.0
-     */
     public FileDrop(
     final java.awt.Component c,
     final Listener listener )
@@ -79,19 +30,6 @@ public class FileDrop
               listener );
     }   // end constructor
     
-    
-    
-    
-    /**
-     * Constructor with a default border and the option to recursively set drop targets.
-     * If your component is a <tt>java.awt.Container</tt>, then each of its children
-     * components will also listen for drops, though only the parent will change borders.
-     *
-     * @param c Component on which files will be dropped.
-     * @param recursive Recursively set children as drop targets.
-     * @param listener Listens for <tt>filesDropped</tt>.
-     * @since 1.0
-     */
     public FileDrop(
     final java.awt.Component c,
     final boolean recursive,
@@ -103,20 +41,6 @@ public class FileDrop
               listener );
     }   // end constructor
     
-    
-    /**
-     * Constructor with a default border and debugging optionally turned on.
-     * With Debugging turned on, more status messages will be displayed to
-     * <tt>out</tt>. A common way to use this constructor is with
-     * <tt>System.out</tt> or <tt>System.err</tt>. A <tt>null</tt> value for
-     * the parameter <tt>out</tt> will result in no debugging output.
-     *
-     * @param out PrintStream to record debugging info or null for no debugging.
-     * @param out 
-     * @param c Component on which files will be dropped.
-     * @param listener Listens for <tt>filesDropped</tt>.
-     * @since 1.0
-     */
     public FileDrop(
     final java.io.PrintStream out,
     final java.awt.Component c,

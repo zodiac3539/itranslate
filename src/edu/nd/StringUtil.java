@@ -11,9 +11,9 @@ public class StringUtil {
 		input = input.replace('>', blank);
 		input = input.replace('#', blank);
 		input = input.replace('@', blank);
-		input = input.replace('&', blank);
+		//input = input.replace('&', blank);
 		input = input.replace('^', blank);
-		input = input.replace(';', blank);
+		//input = input.replace(';', blank);
 		input = input.replace('|', blank);		
 		return input;
 	}

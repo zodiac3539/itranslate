@@ -32,34 +32,14 @@ public class GTranslator {
 		Translation translation =
 		        translate.translate(
 		            jpn,
-		            TranslateOption.sourceLanguage("ja"),
-		            TranslateOption.targetLanguage("ko"));
+		            TranslateOption.sourceLanguage( ImageViewer.fromlan ),
+		            TranslateOption.targetLanguage( ImageViewer.tolan ));
 		
 		ret = new String(translation.getTranslatedText().getBytes(), UTF_8);
 		System.out.println("Original: " + new String(jpn.getBytes(), UTF_8));
 		System.out.println("Translated: " + ret);
 		
 		return ret;
-	}
+	}	
 	
-	
-	/*
-	public static void main(String[] args) {
-	    Translate translate = TranslateOptions.getDefaultInstance().getService();
-		   
-	    // The text to translate
-	    String text = "Hello, world!";
-
-	    // Translates some text into Russian
-	    Translation translation =
-	        translate.translate(
-	            text,
-	            TranslateOption.sourceLanguage("en"),
-	            TranslateOption.targetLanguage("ko"));
-
-
-	    System.out.printf("Text: %s%n", text);
-	    System.out.printf("Translation: %s%n", new String(translation.getTranslatedText().getBytes(), UTF_8));
-
-	}*/
 }

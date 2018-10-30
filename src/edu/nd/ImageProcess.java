@@ -41,7 +41,7 @@ public class ImageProcess {
 		    Iterator<MatOfPoint> iterator = contours.iterator();
 		    int i = 0;
 
-		    System.out.println("Size of contour: " + contours.size());
+		    Logger.debug("Size of contour: " + contours.size());
 		    double maxarea = 0;
 		    int maxnum = 0;
 		    while (iterator.hasNext()) {
@@ -68,7 +68,8 @@ public class ImageProcess {
 					rect.boundingRect().height-4);
 		
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Logger.err(ex.getMessage(), ex);
+			//ex.printStackTrace();
 		}
 		return ret;
 	}
@@ -107,7 +108,7 @@ public class ImageProcess {
 			Imgcodecs.imwrite(filename, postImgProcess(finalimg2));
 			
 		} catch(Exception ex) {
-			ex.printStackTrace();
+			Logger.err(ex.getMessage(), ex);
 		}
 		
 		
@@ -150,7 +151,7 @@ public class ImageProcess {
 			Imgcodecs.imwrite(filename, postImgProcess(finalimg));
 			
 		} catch(Exception ex) {
-			ex.printStackTrace();
+			Logger.err(ex.getMessage(), ex);
 		}
 		
 		
@@ -171,14 +172,12 @@ public class ImageProcess {
 			if(img.getWidth() >= img.getHeight()) {
 				for(int k=0; k<100; k++) {
 					int newwidth = (int)((double)(img.getWidth()-1) * ((double)k/(double)100.0));
-					//System.out.println("new height: " + newheight);
 					Imgproc.floodFill(finalimg2, mask, new Point(newwidth, 0), new Scalar(255));
 					Imgproc.floodFill(finalimg2, mask, new Point(newwidth, img.getHeight()-1), new Scalar(255));
 				}
 			} else {
 				for(int k=0; k<100; k++) {
 					int newheight = (int)((double)(img.getHeight()-1) * ((double)k/(double)100.0));
-					//System.out.println("new height: " + newheight);
 					Imgproc.floodFill(finalimg2, mask, new Point(0, newheight), new Scalar(255));
 					Imgproc.floodFill(finalimg2, mask, new Point(img.getWidth()-1, newheight), new Scalar(255));
 				}				
@@ -187,7 +186,7 @@ public class ImageProcess {
 			
 			Imgcodecs.imwrite(filename, postImgProcess(finalimg2));
 		} catch(Exception ex) {
-			ex.printStackTrace();
+			Logger.err(ex.getMessage(), ex);
 		}
 		
 		
@@ -198,10 +197,9 @@ public class ImageProcess {
 		try {
 			System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 			Mat targetimg = BufferedImage2MatSpecial(img);
-			Imgcodecs.imwrite(filename, targetimg);
-			
+			Imgcodecs.imwrite(filename, targetimg);			
 		} catch(Exception ex) {
-			ex.printStackTrace();
+			Logger.err(ex.getMessage(), ex);
 		}
 		
 		

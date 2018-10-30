@@ -26,18 +26,15 @@ public class JTesseract {
         	for(String element: commands) {
         		com[i] = element;
         		i++;
-        		System.out.println(element);
         	}
         	for(String element: options) {
         		com[i] = element;
         		i++;
-        		System.out.println(element);
         	}
-        	System.out.println(com);
 
         	Process proc = rt.exec(com);
         	int exitVal = proc.waitFor();
-        	System.out.println("Process exitValue: " + exitVal);
+        	Logger.debug("Process exitValue: " + exitVal);
         	
         	output = output + ".txt";
         	
@@ -55,7 +52,8 @@ public class JTesseract {
     		        
             in.close();    		
     	} catch (Exception ex) {
-    		ex.printStackTrace();
+    		Logger.err(ex.getMessage(), ex);
+    		//ex.printStackTrace();
     	}
     	
     	return ret;
