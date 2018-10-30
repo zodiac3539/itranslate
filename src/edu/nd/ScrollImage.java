@@ -658,6 +658,14 @@ public class ScrollImage extends JPanel implements ActionListener  {
 		} else if(target.equals("Next file")) {
 			selection = new ArrayList<ChoiShape>();
 			msg = "";
+			
+			if(ttable.isChange()) {
+			    int reply = JOptionPane.showConfirmDialog(this, "Do you want to proceed without saving the subtitle file?", "Alert", JOptionPane.YES_NO_OPTION);				
+		        if (reply != JOptionPane.YES_OPTION) {
+		        	return;
+			    }
+			}
+			
 			crtnum ++;
 			if(crtnum >= filelist.size()) {
 				this.presentMessage("End of the file list.");
