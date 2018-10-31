@@ -3,11 +3,14 @@ package edu.nd;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.LayoutManager;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
@@ -26,18 +29,15 @@ public class ImgEffectOption extends JFrame {
     JButton btn = new JButton("Save");
     JLabel exp1 = new JLabel("Expected output: ");
 
-    
+    JFrame self = null;
     JTextField kWidth = new JTextField();
     JTextField kHeight = new JTextField();
     JTextField kIterate = new JTextField();
     
 	public ImgEffectOption() {
 		super();
-	}
-	
-	public ImgEffectOption(BufferedImage bf) {
-		super();
-		this.setSize(new Dimension(500, 200));
+		self = this;
+		//this.setSize(new Dimension(500, 200));
 		GridLayout experimentLayout = new GridLayout(0,2);
 		inputarea.add(kernelWidth);
 		inputarea.add(kWidth);
@@ -51,11 +51,21 @@ public class ImgEffectOption extends JFrame {
 		inputarea.setPreferredSize(new Dimension(500, 200));
 		inputarea.setLayout(experimentLayout);
 		
-		//canvas.setPreferredSize(new Dimension(500, 300));
-		this.add(inputarea);
-		//this.add(canvas);
-		this.setDefaultCloseOperation( JFrame.HIDE_ON_CLOSE );
-		this.setVisible(true);
+		canvas.setPreferredSize(new Dimension(500, 300));
+		this.setContentPane(inputarea);
+
+		//this.setDefaultCloseOperation( JFrame.HIDE_ON_CLOSE );
+		this.addWindowListener(new WindowAdapter(){
+            public void windowClosing(WindowEvent e){
+                int i=JOptionPane.showConfirmDialog(null, "Do you want to close?");
+                if(i==0)
+                    self.dispose();
+            }
+        });
+	}
+	
+	public ImgEffectOption(BufferedImage bf) {
+		super();
 		
 	}
 	

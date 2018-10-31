@@ -3,12 +3,15 @@ package edu.nd;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.JFrame;
 import javax.swing.table.AbstractTableModel;
 
 import org.json.JSONArray;
@@ -46,6 +49,65 @@ public class TrasnlateTable extends AbstractTableModel {
 		return tlist.get(num);
 	}
 	
+	public void setValueAt(int num, TranslateVO vo) {
+		tlist.set(num, vo);
+		isChange = true;
+	}
+	
+	public void editWindow(int num) {
+		JFrame jf = new JFrame();
+		SubtitleEditor se = new SubtitleEditor(num, tlist.get(num), this, jf);
+		jf.setContentPane(se);
+		jf.addWindowListener(new WindowListener() {
+
+			@Override
+			public void windowActivated(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowClosed(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowClosing(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				jf.dispose();
+			}
+
+			@Override
+			public void windowDeactivated(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowDeiconified(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowIconified(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowOpened(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		
+		jf.setBounds(200, 200, 500, 500);
+		jf.setVisible(true);
+	}
+	
 	public void remove(int num) {
 		tlist.remove(tlist.get(num));
 		isChange = true;
@@ -68,7 +130,7 @@ public class TrasnlateTable extends AbstractTableModel {
 		
     	File jsonfile = new File(filename);
     	if(!jsonfile.exists()) { 
-    		return -1;
+    		return -2;
     	}
 	    JLoader jl = new JLoader();
 	    JSONArray letsprintthemall = null;

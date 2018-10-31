@@ -3,7 +3,7 @@ package edu.nd;
 public class StringUtil {
 	public static String BlackListFilter(String input) {
 		if(input == null) input = "";
-		char blank = '\u0000';
+		char blank = ' ';
 		
 		input = input.replace('\\', blank);
 		input = input.replace('/', blank);
@@ -23,6 +23,9 @@ public class StringUtil {
 		
 		input = input.replaceAll("&quot;", "\"");
 		input = input.replaceAll("&#39;", "\'");
+		input = input.replaceAll("&amp;", "&");
+		input = input.replaceAll("&lt;", "<");
+		input = input.replaceAll("&gt;", ">");
 		
 		return input;
 	}

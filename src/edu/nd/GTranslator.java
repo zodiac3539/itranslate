@@ -36,8 +36,8 @@ public class GTranslator {
 		            TranslateOption.targetLanguage( ImageViewer.tolan ));
 		
 		ret = new String(translation.getTranslatedText().getBytes(), UTF_8);
-		System.out.println("Original: " + new String(jpn.getBytes(), UTF_8));
-		System.out.println("Translated: " + ret);
+		Logger.debug("Original: " + new String(jpn.getBytes(), UTF_8), new Exception());
+		Logger.debug("Translated: " + ret, new Exception());
 		
 		return ret;
 	}	

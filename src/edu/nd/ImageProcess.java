@@ -119,11 +119,12 @@ public class ImageProcess {
 		try {
 			System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 			Mat targetimg = BufferedImage2MatOriginal(img);
+			Imgproc.cvtColor(targetimg, targetimg, Imgproc.COLOR_RGB2HSV_FULL);
 			Mat finalimg = Mat.zeros(targetimg.size(), CvType.CV_8UC1);
 			String[] lowhsv = null;
 			ImageViewer.lowhsv1.split(",");
 			String[] highhsv = null;
-					ImageViewer.highhsv1.split(",");
+			ImageViewer.highhsv1.split(",");
 			
 			if(filternum == 1) {
 				lowhsv = ImageViewer.lowhsv1.split(",");
@@ -146,9 +147,31 @@ public class ImageProcess {
 						
 			Scalar lowBound = new Scalar(low_h, low_s, low_v);
 			Scalar upperBound = new Scalar(high_h, high_s, high_v);
-			
+
+			Logger.debug("low_h" + low_h);
+			Logger.debug("high_h" + high_h);
 			Core.inRange(targetimg, lowBound, upperBound, finalimg);
-			Imgcodecs.imwrite(filename, postImgProcess(finalimg));
+			Core.bitwise_not(finalimg, finalimg);
+
+			Mat mask = Mat.zeros(img.getHeight()+2, img.getWidth()+2, CvType.CV_8UC1);
+
+			Mat finalimg2 = finalimg.clone();
+			if(img.getWidth() >= img.getHeight()) {
+				for(int k=0; k<100; k++) {
+					int newwidth = (int)((double)(img.getWidth()-1) * ((double)k/(double)100.0));
+					Imgproc.floodFill(finalimg2, mask, new Point(newwidth, 0), new Scalar(255));
+					Imgproc.floodFill(finalimg2, mask, new Point(newwidth, img.getHeight()-1), new Scalar(255));
+				}
+			} else {
+				for(int k=0; k<100; k++) {
+					int newheight = (int)((double)(img.getHeight()-1) * ((double)k/(double)100.0));
+					Imgproc.floodFill(finalimg2, mask, new Point(0, newheight), new Scalar(255));
+					Imgproc.floodFill(finalimg2, mask, new Point(img.getWidth()-1, newheight), new Scalar(255));
+				}				
+			}
+			Imgproc.floodFill(finalimg2, mask, new Point(img.getWidth()-1,img.getHeight()-1), new Scalar(255));
+			
+			Imgcodecs.imwrite(filename, postImgProcess(finalimg2));
 			
 		} catch(Exception ex) {
 			Logger.err(ex.getMessage(), ex);

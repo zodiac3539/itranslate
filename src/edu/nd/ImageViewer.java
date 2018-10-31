@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,6 +50,7 @@ public class ImageViewer {
     public static double zoom = 1.0;
     public static EnumCollection.SelectionShape defaultShape = EnumCollection.SelectionShape.Box;
     public static EnumCollection.ImageProcess defaultImageProcess = EnumCollection.ImageProcess.Normal;
+    public static EnumCollection.SpecialZoom zoom_mode = EnumCollection.SpecialZoom.Normal;
     public static int kernel_width = 2;
     public static int kernel_height = 2;
     public static int image_iterate = 1;
@@ -182,7 +184,8 @@ public class ImageViewer {
     {
     	checkAndLoadInit();
     	checkAndLoadAmbiguous();
-    	
+        
+        
         javax.swing.JFrame frame = new javax.swing.JFrame( "FileDrop" );
         //javax.swing.border.TitledBorder dragBorder = new javax.swing.border.TitledBorder( "Drop 'em" );
         final javax.swing.JTextArea text = new javax.swing.JTextArea();
@@ -213,11 +216,14 @@ public class ImageViewer {
                         JMenuItem previous_file = new JMenuItem("Previous file");
                         previous_file.addActionListener(p);
                         
-                        JMenu menu = new JMenu("Menu");
-                        JMenuItem full_zoom = new JMenuItem("Full");
+                        JMenu menu = new JMenu("Zoom");
+                        JMenuItem full_zoom = new JMenuItem("Normal zoom");
                         full_zoom.addActionListener(p);
-                        JMenuItem width_zoom = new JMenuItem("Width");
+                        JMenuItem width_zoom = new JMenuItem("Always width fit");
                         width_zoom.addActionListener(p);
+                        JMenuItem height_zoom = new JMenuItem("Always height fit");
+                        height_zoom.addActionListener(p);
+                        
                         JMenuItem zoomin = new JMenuItem("Zoom in");
                         zoomin.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, 0));
                         zoomin.addActionListener(p);
@@ -300,6 +306,15 @@ public class ImageViewer {
                         JMenuItem otsui = new JMenuItem("OCR with Ostu Inverse");
                         otsui.addActionListener(p);     
                         otsui.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, 0));
+                        JMenuItem hsv1 = new JMenuItem("OCR with HSV filter1");
+                        hsv1.addActionListener(p);     
+                        hsv1.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0));
+                        JMenuItem hsv2 = new JMenuItem("OCR with HSV filter2");
+                        hsv2.addActionListener(p);     
+                        hsv2.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0));
+                        JMenuItem hsv3 = new JMenuItem("OCR with HSV filter3");
+                        hsv3.addActionListener(p);     
+                        hsv3.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0));
                         
                         JMenu menu5 = new JMenu("Subtitle");
                         JMenuItem showsubtitle = new JMenuItem("Show subtitle");
@@ -325,6 +340,8 @@ public class ImageViewer {
                         
                         menu.add(full_zoom);
                         menu.add(width_zoom);
+                        menu.add(height_zoom);                        
+                        menu.addSeparator();
                         menu.add(zoomin);
                         menu.add(zoomout);
                         
@@ -353,7 +370,11 @@ public class ImageViewer {
                         
                         menu4.add(justocr);
                         menu4.add(otsu);
-                        menu4.add(otsui);                        
+                        menu4.add(otsui);
+                        menu4.addSeparator();
+                        menu4.add(hsv1);
+                        menu4.add(hsv2);
+                        menu4.add(hsv3);
                         
                         menu5.add(showsubtitle);
                         menu5.add(hidesubtitle);
@@ -381,7 +402,7 @@ public class ImageViewer {
                 }   // end for: through each dropped file
             }   // end filesDropped
         }); // end FileDrop.Listener
-
+        
         frame.setBounds( 100, 100, 500, 500 );
         frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         frame.setVisible(true);
@@ -396,4 +417,13 @@ public class ImageViewer {
     	
     	return frm;
     }
+
+    public static int getMainFrameHeight() {
+    	int frm = 0;
+    	
+    	frm = f.getHeight();
+    	
+    	return frm;
+    }
+
 }

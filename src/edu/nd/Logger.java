@@ -10,6 +10,13 @@ public class Logger {
 		}
 	}
 	
+	public static void debug(String input, Exception ex) {
+		if( level <= 1) {
+			System.out.print(ex.getStackTrace()[0]);
+			System.out.println(": " + input);
+		}
+	}
+	
 	public static void err(String input, Exception ex) {
 		if( level <= 2) {
 			System.err.println(input);

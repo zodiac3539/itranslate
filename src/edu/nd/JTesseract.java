@@ -11,7 +11,7 @@ public class JTesseract {
     	
     }
     
-    public String doOCR(String name) {
+    public synchronized String doOCR(String name) {
     	String ret = "";
     	try {
         	Runtime rt = Runtime.getRuntime();
@@ -47,10 +47,9 @@ public class JTesseract {
     		String str = "";
     		      
     		while ((str = in.readLine()) != null) {
-    		    ret = ret + str;
+    		    ret = ret + str + " ";
     		}
-    		        
-            in.close();    		
+            in.close();
     	} catch (Exception ex) {
     		Logger.err(ex.getMessage(), ex);
     		//ex.printStackTrace();

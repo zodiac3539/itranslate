@@ -208,39 +208,62 @@ public class ScrollImage extends JPanel implements ActionListener  {
     }
     
     public void filereload() {
-    	
+    	File crtfile = fileload( filelist.get(crtnum).getPath() );
+    	Logger.debug(crtfile.getPath() + "has been reloaded.", new Exception());
     }
+    
     public File fileload(String filename) {
         File current = new File(filename);
         ImageViewer.setTitle(filename);
         
-        ttable.buildListFromJSON( filename + ".json" );
+        int jsonRet = ttable.buildListFromJSON( filename + ".json" );
     	try {
         	//presentSysMessage(filename + " is presented.");
             this.originalimage = ImageIO.read(current);
+            
+            if(ImageViewer.zoom_mode == EnumCollection.SpecialZoom.Normal) {
+            	
+            } else if (ImageViewer.zoom_mode == EnumCollection.SpecialZoom.Width) {
+            	Logger.debug("Special zoom width case", new Exception());
+    			if( originalimage.getWidth() > ImageViewer.getMainFrameWidth()) {
+    				ImageViewer.zoom = (double)(ImageViewer.getMainFrameWidth()-55) / (double) originalimage.getWidth();
+    			}
+            } else if (ImageViewer.zoom_mode == EnumCollection.SpecialZoom.Height) {
+    			if( originalimage.getHeight() > ImageViewer.getMainFrameHeight()) {
+    				ImageViewer.zoom = (double)(ImageViewer.getMainFrameHeight()-55) / (double) originalimage.getHeight();
+    			}            	
+            }
+            
             int w = (int)(originalimage.getWidth() * ImageViewer.zoom);
             int h = (int)(originalimage.getHeight() * ImageViewer.zoom);
             
             if( ImageViewer.zoom != 1.0 ) {
-                image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+                this.image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
                 AffineTransform at = new AffineTransform();
                 at.scale(ImageViewer.zoom, ImageViewer.zoom);
                 AffineTransformOp scaleOp = 
                    new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-                image = scaleOp.filter(originalimage, image);            	
+                this.image = scaleOp.filter(originalimage, image);            	
             } else {
-            	image = originalimage.getSubimage(0, 0, w, h);
+            	this.image = originalimage.getSubimage(0, 0, w, h);
             }
             if(subtitle != null) {
-            	jtableScroll.repaint();
-            	jtableScroll.revalidate();
-            	subtitle.repaint();
-            	subtitle.revalidate();
+            	if( jsonRet == -1) {
+            		JOptionPane.showMessageDialog(this, "We ran into the problem while reading the subtitle JSON file.\nWe encourage you to delete the subtitle JSON file.");
+            	} else if( jsonRet == -2 ) {
+            		this.presentSysMessage("The subtitle file does not exist. Please make sure to save the file before moving on to the next file.");
+            	} else {
+                	jtableScroll.repaint();
+                	jtableScroll.revalidate();
+                	subtitle.repaint();
+                	subtitle.revalidate();            		
+            	}
             }
         }catch(IOException ex) {
             ex.printStackTrace();
         	//Logger.getLogger(ScrollImageTest.class.getName()).log(Level.SEVERE, null, ex);
         }
+
     	return current;
     }
     
@@ -287,11 +310,20 @@ public class ScrollImage extends JPanel implements ActionListener  {
 		table.setFont( ImgFront.getFont(12) );
         table.setRowHeight(50);
 		final JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem deleteItem = new JMenuItem("Delete");
+        JMenuItem editItem = new JMenuItem("Edit");
+		JMenuItem deleteItem = new JMenuItem("Delete");
         JMenuItem copyToClipboard = new JMenuItem("Copy the original sentence to clipboard.");
         JMenuItem y50 = new JMenuItem("y=y+50");
         JMenuItem x50 = new JMenuItem("x=x+50");
         JMenuItem xm50 = new JMenuItem("x=x-50");
+
+        editItem.addActionListener(new ActionListener()   {
+        	@Override
+            public void actionPerformed(ActionEvent e) {
+        		//ttable.copyToClipboard(table.getSelectedRow());
+        		ttable.editWindow(table.getSelectedRow());
+        	}
+        });
         
         deleteItem.addActionListener(new ActionListener()   {
         	@Override
@@ -335,6 +367,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
            	}
         });
         
+        popupMenu.add(editItem);
         popupMenu.add(deleteItem);    
         popupMenu.add(copyToClipboard);
         popupMenu.add(x50);
@@ -638,23 +671,30 @@ public class ScrollImage extends JPanel implements ActionListener  {
 		//tmpHeight = tmpHeight + 5;    	
     }
 	@Override
+	
 	public void actionPerformed(ActionEvent arg0) {
 		JMenuItem src = (JMenuItem) arg0.getSource();
 		String target = src.getText();
 		
-		if(target.equals("Width")) {
-			if( originalimage.getWidth() > ImageViewer.getMainFrameWidth()) {
-				ImageViewer.zoom = (double)(ImageViewer.getMainFrameWidth()-50) / (double) originalimage.getWidth();
-				Logger.debug( "" + ImageViewer.getMainFrameWidth() );
-				Logger.debug( "" + originalimage.getWidth() );
-				Logger.debug( "" + ImageViewer.zoom);
-				//filereload
-				File next = filelist.get(crtnum);
-				File tmp = this.fileload(next.getPath());
-				canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
-				//sp.setPreferredSize(preferredSize);
-				redrawAll();
-			}
+		if(target.equals("Always width fit")) {
+			Logger.debug("width fit called", new Exception());
+			ImageViewer.zoom_mode = EnumCollection.SpecialZoom.Width;
+			filereload();
+			canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+			redrawAll();
+			
+		} else if(target.equals("Normal zoom")) {
+			ImageViewer.zoom_mode = EnumCollection.SpecialZoom.Normal;
+			filereload();
+			canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+			redrawAll();
+			
+		} else if(target.equals("Always height fit")) {
+			ImageViewer.zoom_mode = EnumCollection.SpecialZoom.Height;
+			filereload();
+			canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+			redrawAll();
+						
 		} else if(target.equals("Next file")) {
 			selection = new ArrayList<ChoiShape>();
 			msg = "";
@@ -672,19 +712,10 @@ public class ScrollImage extends JPanel implements ActionListener  {
 				crtnum = filelist.size() - 1;
 				return;
 			}
-			File next = fileload(filelist.get(crtnum).getPath());
-			try {
-				this.image = ImageIO.read(next);
-				canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
-				canvas.revalidate();
-				canvas.repaint();
-				sp.revalidate();
-				sp.getVerticalScrollBar().setValue(0);
-			} catch(Exception ex) {
-				System.err.println("File doesn't exist.");
-				msg = "Next file does not exist.";
-				canvas.repaint();
-			}			
+			fileload(filelist.get(crtnum).getPath());
+			sp.getVerticalScrollBar().setValue(0);
+			sp.getHorizontalScrollBar().setValue(0);
+			redrawAll();
 		} else if(target.equals("Previous file")) {
 			selection = new ArrayList<ChoiShape>();
 			msg = "";
@@ -694,19 +725,11 @@ public class ScrollImage extends JPanel implements ActionListener  {
 				crtnum = 0;
 				return;
 			}
-			File next = fileload(filelist.get(crtnum).getPath());
-			try {
-				this.image = ImageIO.read(next);
-				canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
-				canvas.revalidate();
-				canvas.repaint();
-				sp.revalidate();
-				sp.getVerticalScrollBar().setValue(0);
-			} catch(Exception ex) {
-				Logger.err("File doesn't exist.", ex);
-				msg = "Next file does not exist.";
-				canvas.repaint();
-			}
+			fileload(filelist.get(crtnum).getPath());
+			sp.getVerticalScrollBar().setValue(0);
+			sp.getHorizontalScrollBar().setValue(0);
+
+			redrawAll();
 		} else if(target.equals("Zoom out")) {
 			ImageViewer.zoom = ImageViewer.zoom - 0.05;
 			if (ImageViewer.zoom < 0.05) ImageViewer.zoom = 0.05; 
@@ -725,17 +748,32 @@ public class ScrollImage extends JPanel implements ActionListener  {
 			//sp.setPreferredSize(preferredSize);
 			redrawAll();
 		} else if(target.equals("Move up")) {
-			int newvertscroll = sp.getVerticalScrollBar().getValue() - 35;
+			this.msg = "";
+			redrawAll();
+			int incremental = (int)((double)image.getHeight() * (double)0.05);
+			int newvertscroll = sp.getVerticalScrollBar().getValue() - incremental;
 			if(newvertscroll < 0) newvertscroll = 0;
 			sp.getVerticalScrollBar().setValue(newvertscroll);			
 		} else if(target.equals("Move down")) {
-			sp.getVerticalScrollBar().setValue(sp.getVerticalScrollBar().getValue() + 35);
+			this.msg = "";
+			redrawAll();
+			int incremental = (int)((double)image.getHeight() * (double)0.05);
+			sp.getVerticalScrollBar().setValue(sp.getVerticalScrollBar().getValue() + incremental);
 		} else if(target.equals("OCR")) {
 			doOCR(90);
 		} else if(target.equals("OCR with Ostu")) {
 			doOCR(0);
 		} else if(target.equals("OCR with Ostu Inverse")) {
 			doOCR(73);
+		} else if(target.equals("OCR with HSV filter1")) {
+			doOCR(65);
+		
+		} else if(target.equals("OCR with HSV filter2")) {
+			doOCR(83);
+		
+		} else if(target.equals("OCR with HSV filter3")) {
+			doOCR(68);
+		
 		} else if(target.equals("Show subtitle")) {
 			subtitleOn = true;
 			redrawAll();
