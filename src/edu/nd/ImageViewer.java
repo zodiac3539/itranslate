@@ -25,6 +25,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.KeyStroke;
+import javax.swing.UIManager;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
@@ -63,28 +64,21 @@ public class ImageViewer {
     public static String tolan = "en";    
     public static int linebreak = 7;
     public static String fontcolor = "#000000";
-   
+    public static double scrollRate = 0.1;
+    
+    public static boolean isAutoTranslate = true;
+    
     public static void checkAndLoadAmbiguous() {
 		String settingFile = System.getProperty("user.home") + File.separator + "ambiguous.json";
 		File file = new File(settingFile);
 		if(!file.exists()) {
 			try {
-				InputStream is = Test.class.getResourceAsStream("./ambiguous.json");
-				
-				BufferedReader br = new BufferedReader(new InputStreamReader(is));
-				String line = "";
-				String ks = "";
-				while( (line = br.readLine()) != null) {
-					ks = ks + line;
-				}
-				br.close();
-				is.close();
+				CreateInit initSetting = new CreateInit();
 				
 				FileOutputStream fos = new FileOutputStream(file);
-				fos.write(ks.getBytes());
+				fos.write(initSetting.retAmb().getBytes());
 				fos.flush();
 				fos.close();
-
 			} catch (Exception _e) {
 				_e.printStackTrace();
 			}
@@ -184,7 +178,12 @@ public class ImageViewer {
     {
     	checkAndLoadInit();
     	checkAndLoadAmbiguous();
-        
+    	try {
+        	UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    		
+    	} catch(Exception ex) {
+    		ex.printStackTrace();
+    	}
         
         javax.swing.JFrame frame = new javax.swing.JFrame( "FileDrop" );
         //javax.swing.border.TitledBorder dragBorder = new javax.swing.border.TitledBorder( "Drop 'em" );
@@ -208,7 +207,7 @@ public class ImageViewer {
                       
                         JMenuBar menubar = new JMenuBar();
                         
-                        
+                        //menubar.setFont(ImgFront.getFont(15));
                         JMenu menu0 = new JMenu("File");
                         JMenuItem next_file = new JMenuItem("Next file");
                         next_file.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
@@ -225,7 +224,7 @@ public class ImageViewer {
                         height_zoom.addActionListener(p);
                         
                         JMenuItem zoomin = new JMenuItem("Zoom in");
-                        zoomin.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, 0));
+                        zoomin.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, 0));
                         zoomin.addActionListener(p);
                         
                         JMenuItem zoomout = new JMenuItem("Zoom out");
@@ -263,6 +262,12 @@ public class ImageViewer {
                         JMenuItem rights = new JMenuItem("Shrink right");
                         rights.addActionListener(p);     
                         rights.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_CLOSE_BRACKET, ActionEvent.SHIFT_MASK));
+                        JMenuItem ups = new JMenuItem("Shrink up");
+                        ups.addActionListener(p);
+                        ups.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.SHIFT_MASK));
+                        JMenuItem downs = new JMenuItem("Shrink down");
+                        downs.addActionListener(p);     
+                        downs.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.SHIFT_MASK));
 
                         
                         JMenuItem autobound = new JMenuItem("Find contour");
@@ -315,6 +320,8 @@ public class ImageViewer {
                         JMenuItem hsv3 = new JMenuItem("OCR with HSV filter3");
                         hsv3.addActionListener(p);     
                         hsv3.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0));
+                        JMenuItem testhsv = new JMenuItem("Test HSV");
+                        testhsv.addActionListener(p);    
                         
                         JMenu menu5 = new JMenu("Subtitle");
                         JMenuItem showsubtitle = new JMenuItem("Show subtitle");
@@ -326,6 +333,14 @@ public class ImageViewer {
                         JMenuItem savesubtitle = new JMenuItem("Save subtitle");
                         savesubtitle.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0));
                         savesubtitle.addActionListener(p);
+
+                        ButtonGroup translateGroup = new ButtonGroup();
+                        JRadioButtonMenuItem autotranslateon = new JRadioButtonMenuItem("Auto translate on", true);
+                        autotranslateon.addActionListener(imp);
+                        JRadioButtonMenuItem autotranslateoff = new JRadioButtonMenuItem("Auto translate off");
+                        autotranslateoff.addActionListener(imp);
+                        translateGroup.add(autotranslateon);
+                        translateGroup.add(autotranslateoff);                        
                         
                         JMenu menu6 = new JMenu("Scroll");
                         JMenuItem moveup = new JMenuItem("Move up");
@@ -355,8 +370,11 @@ public class ImageViewer {
                         menu2.add(downex);
                         menu2.addSeparator();
                         menu2.add(lefts);
-                        menu2.add(rights);                        
-                        menu2.addSeparator();                        
+                        menu2.add(rights);   
+                        menu2.add(ups);   
+                        menu2.add(downs);   
+                        
+                        menu2.addSeparator();
                         menu2.add(autobound);
                         menu2.addSeparator();
                         menu2.add(autoon);
@@ -375,10 +393,14 @@ public class ImageViewer {
                         menu4.add(hsv1);
                         menu4.add(hsv2);
                         menu4.add(hsv3);
+                        menu4.add(testhsv);
                         
                         menu5.add(showsubtitle);
                         menu5.add(hidesubtitle);
                         menu5.add(savesubtitle);
+                        menu5.addSeparator();
+                        menu5.add(autotranslateon);
+                        menu5.add(autotranslateoff);                        
                         
                         menu6.add(moveup);
                         menu6.add(movedown);

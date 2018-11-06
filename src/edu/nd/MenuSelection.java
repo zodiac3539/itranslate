@@ -24,6 +24,10 @@ public class MenuSelection implements ActionListener{
 			ImageViewer.autocontour = true;
 		} else if(target.equals("Auto find contour off")) {
 			ImageViewer.autocontour = false;
+		} else if(target.equals("Auto translate on")) {
+			ImageViewer.isAutoTranslate = true;
+		} else if(target.equals("Auto translate off")) {
+			ImageViewer.isAutoTranslate = false;
 		}
 
 	}

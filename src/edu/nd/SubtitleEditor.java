@@ -76,9 +76,17 @@ public class SubtitleEditor extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				GTranslator gt = new GTranslator();
-				String org = gt.translate(txt_original.getText());
-				txt_translate.setText(org);
+				btn_translate.setEnabled(false);
+				Thread t = new Thread() {
+					public void run() {
+						GTranslator gt = new GTranslator();
+						String org = gt.translate(txt_original.getText());
+						txt_translate.setText(org);						
+						btn_translate.setEnabled(true);
+					}
+				};
+				t.run();				
+
 			}
 		});
 		

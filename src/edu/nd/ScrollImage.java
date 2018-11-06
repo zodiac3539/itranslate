@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.MenuItem;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,6 +19,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.font.TextAttribute;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -52,8 +55,11 @@ import java.awt.geom.RoundRectangle2D;
 public class ScrollImage extends JPanel implements ActionListener  {
     private JFrame subtitle = null;
 	private static final long serialVersionUID = 1L;
-    private BufferedImage originalimage;
+
+	private BufferedImage originalimage;
     private BufferedImage image;
+    private BufferedImage bufferImage;
+
     private JPanel canvas;
     private List<ChoiShape> selection = new ArrayList<ChoiShape>();
     private List<File> filelist = new ArrayList<File>();
@@ -78,38 +84,54 @@ public class ScrollImage extends JPanel implements ActionListener  {
     private boolean subtitleOn = false;
     private JScrollPane jtableScroll = null;
     
-    public void presentMessage(String _msg) {
+    public synchronized void presentMessage(String _msg) {
     	_msg = StringUtil.reverseEscape(_msg);
 		this.msg = _msg;
-		this.canvas.repaint();
-		this.canvas.revalidate();
-		this.sp.repaint();
-		this.sp.revalidate();	
+		canvas.repaint();
+		//redrawAll();
+		
     }
     
-    public void presentSysMessage(String _msg) {
+    public synchronized void presentSysMessage(String _msg) {
 		this.msg = _msg;
-		this.canvas.repaint();
-		this.canvas.revalidate();
-		this.sp.repaint();
-		this.sp.revalidate();	
+		canvas.repaint();
+		
 		Thread t = new Thread() {
 			public void run() {
 				try {
-					sleep(3000);
-					msg = "";
-					canvas.repaint();
-					canvas.revalidate();
-					sp.repaint();
-					sp.revalidate();					
+					sleep(2500);
+					if(msg == null) msg = "";
+					if(msg.equals(_msg)) presentMessage("");
+					
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
+				
 			}
 		};
 		t.start();
     }
-        	
+
+    public synchronized void shortSysMessage(String _msg) {
+		this.msg = _msg;
+		canvas.repaint();
+		
+		Thread t = new Thread() {
+			public void run() {
+				try {
+					sleep(800);
+					if(msg == null) msg = "";
+					if(msg.equals(_msg)) presentMessage("");
+					
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+				
+			}
+		};
+		t.start();
+    }
+    
     public class MoveListener implements MouseMotionListener {
 
 		@Override
@@ -117,8 +139,9 @@ public class ScrollImage extends JPanel implements ActionListener  {
 			if(global_clicked == true) {
 				tempX = arg0.getX();
 				tempY = arg0.getY();
+				//canvas.revalidate();;
 				canvas.repaint();
-				canvas.revalidate();
+				//sp.repaint();
 			}
 		}
 
@@ -194,8 +217,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
 			if( ImageViewer.autocontour ) {
 				findContour();
 			}
-			canvas.repaint();
-			
+			redrawAll();			
 		}
 
 		@Override
@@ -234,24 +256,32 @@ public class ScrollImage extends JPanel implements ActionListener  {
     			}            	
             }
             
-            int w = (int)(originalimage.getWidth() * ImageViewer.zoom);
-            int h = (int)(originalimage.getHeight() * ImageViewer.zoom);
+            int w = (int)((double) originalimage.getWidth() * ImageViewer.zoom);
+            int h = (int)((double) originalimage.getHeight() * ImageViewer.zoom);
             
             if( ImageViewer.zoom != 1.0 ) {
-                this.image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-                AffineTransform at = new AffineTransform();
-                at.scale(ImageViewer.zoom, ImageViewer.zoom);
-                AffineTransformOp scaleOp = 
-                   new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-                this.image = scaleOp.filter(originalimage, image);            	
+            	Logger.debug("Zoom is not 1.0 " + w +"/" + h, new Exception());
+                BufferedImage image_tmp = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D tmpg = image_tmp.createGraphics();
+                tmpg.setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                tmpg.drawImage(originalimage, 0, 0, w, h, null);
+                //AffineTransform at = new AffineTransform();
+                //at.scale(ImageViewer.zoom, ImageViewer.zoom);
+                //AffineTransformOp scaleOp = 
+                //   new AffineTransformOp(at, AffineTransformOp.TYPE_BICUBIC);
+                
+                this.image = image_tmp.getSubimage(0, 0, w, h);
+                image_tmp = null;
+                
             } else {
             	this.image = originalimage.getSubimage(0, 0, w, h);
             }
+            this.bufferImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
             if(subtitle != null) {
             	if( jsonRet == -1) {
             		JOptionPane.showMessageDialog(this, "We ran into the problem while reading the subtitle JSON file.\nWe encourage you to delete the subtitle JSON file.");
             	} else if( jsonRet == -2 ) {
-            		this.presentSysMessage("The subtitle file does not exist. Please make sure to save the file before moving on to the next file.");
+            		shortSysMessage("The subtitle file does not exist. Please make sure to save the file before moving on to the next file.");
             	} else {
                 	jtableScroll.repaint();
                 	jtableScroll.revalidate();
@@ -259,6 +289,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
                 	subtitle.revalidate();            		
             	}
             }
+            originalimage = null;
         }catch(IOException ex) {
             ex.printStackTrace();
         	//Logger.getLogger(ScrollImageTest.class.getName()).log(Level.SEVERE, null, ex);
@@ -384,6 +415,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
 		subtitle.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		subtitle.setVisible(true);
 		
+		
         this.canvas = new JPanel() {
         
             private static final long serialVersionUID = 12314L;
@@ -391,10 +423,9 @@ public class ScrollImage extends JPanel implements ActionListener  {
             protected void paintComponent(Graphics g) {
             	Graphics2D g2d = (Graphics2D) g;
                 super.paintComponent(g);
-  
-                g2d.drawImage(image, 0, 0, null);                	
-                
-                drawSubtitle(g2d);
+ 
+                g2d.drawImage(bufferImage, 0, 0, null);                	
+
                 if( ImageViewer.defaultShape == EnumCollection.SelectionShape.Box ) {
                 	drawTempBox(g2d);
                 } else if( ImageViewer.defaultShape == EnumCollection.SelectionShape.RRectangle ) {
@@ -403,15 +434,6 @@ public class ScrollImage extends JPanel implements ActionListener  {
                 	drawTempCircle(g2d);
                 }
 
-                if(!selection.isEmpty()) {
-                	g2d.setStroke(thickStroke);
-                	for(ChoiShape rect : selection ) {
-                		g2d.setColor(Color.MAGENTA);
-                		g2d.draw(rect.getShape());
-                	
-                	}
-                	g2d.setStroke(normalStroke);
-                }
                 if(!msg.equals("")) {
                 	Font myFont = ImgFront.getFont( ImageViewer.font_size );
                 	int msgx = 5 + sp.getHorizontalScrollBar().getValue();
@@ -429,7 +451,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
                 	g2d.setColor( ImageViewer.getFontColor() );
                 	g2d.drawString(msg, msgx, msyy);
 
-                }
+                }		
             }
         };
         //canvas.add(new JButton("Currently I do nothing"));
@@ -442,6 +464,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
         sp.getHorizontalScrollBar().setPreferredSize(new Dimension (0, 30));
         setLayout(new BorderLayout());
         add(sp, BorderLayout.CENTER);
+        redrawAll();
     }
     
     private void DrawTempRoundRectangle(Graphics2D g2d) {
@@ -584,7 +607,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
                 	}
         			g2d.fillRect(x - 5, 
         					     y - (int)(g2d.getFontMetrics().getHeight() * 0.8 ),
-        					     totalwidth * 7, 
+        					     totalwidth * ImageViewer.linebreak, 
         					     (int)(g2d.getFontMetrics().getHeight() * 1.1));
         			//g2d.drawString(line, x, y += g2d.getFontMetrics().getHeight());        			
                 	g2d.setColor(Color.WHITE);
@@ -617,7 +640,8 @@ public class ScrollImage extends JPanel implements ActionListener  {
     }
     private String getLineBreak(String input) {
     	String output = "";
-    	
+    	int lineBreakLimit = ImageViewer.linebreak;
+    	lineBreakLimit = lineBreakLimit * 2;
 	    int len = input.length();
 	    int z = 0;
 	    
@@ -630,7 +654,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
 	    	}
 	    	
 	    	
-	    	if(z > 15) {
+	    	if(z > lineBreakLimit) {
 	    		
 	    		output = output + "\n";
 	    		z = 0;
@@ -733,31 +757,28 @@ public class ScrollImage extends JPanel implements ActionListener  {
 		} else if(target.equals("Zoom out")) {
 			ImageViewer.zoom = ImageViewer.zoom - 0.05;
 			if (ImageViewer.zoom < 0.05) ImageViewer.zoom = 0.05; 
-			File next = filelist.get(crtnum);
-			File tmp = this.fileload(next.getPath());
+			filereload();
 			canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 			//sp.setPreferredSize(preferredSize);
 			redrawAll();
 
 		} else if(target.equals("Zoom in")) {
 			ImageViewer.zoom = ImageViewer.zoom + 0.05;
-			//if (ImageViewer.zoom < 0.1) ImageViewer.zoom = 0.1; 
-			File next = filelist.get(crtnum);
-			File tmp = this.fileload(next.getPath());
+			filereload();
 			canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 			//sp.setPreferredSize(preferredSize);
 			redrawAll();
 		} else if(target.equals("Move up")) {
 			this.msg = "";
 			redrawAll();
-			int incremental = (int)((double)image.getHeight() * (double)0.05);
+			int incremental = (int)((double)image.getHeight() * ImageViewer.scrollRate);
 			int newvertscroll = sp.getVerticalScrollBar().getValue() - incremental;
 			if(newvertscroll < 0) newvertscroll = 0;
 			sp.getVerticalScrollBar().setValue(newvertscroll);			
 		} else if(target.equals("Move down")) {
 			this.msg = "";
 			redrawAll();
-			int incremental = (int)((double)image.getHeight() * (double)0.05);
+			int incremental = (int)((double)image.getHeight() * ImageViewer.scrollRate);
 			sp.getVerticalScrollBar().setValue(sp.getVerticalScrollBar().getValue() + incremental);
 		} else if(target.equals("OCR")) {
 			doOCR(90);
@@ -805,6 +826,9 @@ public class ScrollImage extends JPanel implements ActionListener  {
 			selection = new ArrayList<ChoiShape>();
 			presentMessage("");
 			redrawAll();
+		} else if (target.equals("Test HSV")) {
+			testHSV();
+			
 		} else if(target.equals("Expand left")
 				|| target.equals("Expand up")
 				|| target.equals("Expand down")				
@@ -812,7 +836,10 @@ public class ScrollImage extends JPanel implements ActionListener  {
 			    || target.equals("Expand right")
 			    || target.equals("Shrink right")			    
 			    || target.equals("Shrink left")			    
-			) {
+			    || target.equals("Shrink up")			    
+			    || target.equals("Shrink down")			    
+
+				) {
 			//=============================================================================================
 			//================ Manipulating selection area start ==========================================
 			//=============================================================================================
@@ -847,6 +874,12 @@ public class ScrollImage extends JPanel implements ActionListener  {
 					}
 				} else if (target.equals("Expand down")) {
 					tmpHeight = tmpHeight + 5;
+				} else if(target.equals("Shrink up")) {
+					tmpY = tmpY + 5;
+					tmpHeight = tmpHeight - 5;
+				} else if(target.equals("Shrink down")) {
+					//tmpY = tmpY - 5;
+					tmpHeight = tmpHeight - 5;
 				}
 				
 				if ( shape.getForm() == EnumCollection.SelectionShape.Box ) {
@@ -896,10 +929,11 @@ public class ScrollImage extends JPanel implements ActionListener  {
 			presentSysMessage("Please select the shape first.");
 			return;
 		}
-		presentMessage("OCR...");
 		final List<ChoiShape> trlist = new ArrayList<ChoiShape>(selection);
 		selection = new ArrayList<ChoiShape>();
-
+		redrawAll();
+		presentSysMessage("OCR...");
+		
 		Thread t1 = new Thread() {
 			public void run() {
 				String consolidated = "";
@@ -957,13 +991,18 @@ public class ScrollImage extends JPanel implements ActionListener  {
 					ret = StringUtil.BlackListFilter(ret);
 					consolidated = consolidated + " " +ret;
 				}
-				presentMessage("Translating...");
-				final String target_translate = consolidated;
-				redrawAll();
-				GTranslator gt = new GTranslator();
-				String translated = gt.translate(target_translate);
-				presentMessage( translated );
-				
+				final String target_translate = consolidated;				
+				presentSysMessage("Translating...");
+				String translated = "";
+				if(ImageViewer.isAutoTranslate) {
+					GTranslator gt = new GTranslator();
+					translated = gt.translate(target_translate);
+					presentMessage( translated );
+					
+				} else {
+					translated = "Placeholder for translated!";
+					presentMessage(consolidated);
+				}
 				if(translated != null && translated.length() > 0) {
 					TranslateVO vo = new TranslateVO();
 					vo.setX( (int) ( (trlist.get(trlist.size()-1).getShape().getBounds2D().getX())*(1/ImageViewer.zoom) ) );
@@ -973,18 +1012,120 @@ public class ScrollImage extends JPanel implements ActionListener  {
 					ttable.addToList(vo);
 					subtitle.repaint();
 					subtitle.revalidate();
-				}
+				}					
 				
 				redrawAll();				
 			}
 		};
 		t1.start();
 	}
+	
+	private void drawBuffer(Graphics2D g2d) {
+        g2d.drawImage(image, 0, 0, null);                	
+        
+        drawSubtitle(g2d);
+        if(!selection.isEmpty()) {
+        	g2d.setStroke(thickStroke);
+        	for(ChoiShape rect : selection ) {
+        		g2d.setColor(Color.MAGENTA);
+        		g2d.draw(rect.getShape());
+        	
+        	}
+        	g2d.setStroke(normalStroke);
+        }
+	}
+	
 	public void redrawAll() {
+		drawBuffer((Graphics2D) bufferImage.getGraphics());
+		//canvas.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 		canvas.repaint();
 		canvas.revalidate();
 		sp.repaint();
 		sp.revalidate();
 		//sp.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 	}
+	
+	private void testHSV() {
+		if(selection.isEmpty()) {
+			presentSysMessage("Please select the shape first.");
+			return;
+		}
+		BufferedImage im = null;
+		for (ChoiShape targetshape : selection) {
+			int cropx = (int) targetshape.getShape().getBounds2D().getX();
+			int cropy = (int) targetshape.getShape().getBounds2D().getY();
+			int tmp_width = (int) targetshape.getShape().getBounds2D().getWidth();
+			int tmp_height = (int) targetshape.getShape().getBounds2D().getHeight();
+			if(tmp_width == 0) {
+				JOptionPane.showMessageDialog(sp,
+					    "There is something wrong with the selection box.");
+				presentMessage("");
+				return;
+			}
+
+			BufferedImage cropped_target = image.getSubimage(cropx, 
+													  cropy, 
+													  tmp_width, 
+													  tmp_height);
+		
+			BufferedImage cropped = new BufferedImage(tmp_width, tmp_height, BufferedImage.TYPE_INT_ARGB);
+			Graphics gg = cropped.getGraphics();
+			
+			gg.setColor(Color.WHITE);
+			
+			gg.fillRect(0, 0, tmp_width, tmp_height);
+			if(targetshape.getForm() == EnumCollection.SelectionShape.Circle) {
+				gg.setClip(new Ellipse2D.Double(0, 0, tmp_width, tmp_height));
+			} else if (targetshape.getForm() == EnumCollection.SelectionShape.RRectangle) {
+				gg.setClip(new RoundRectangle2D.Double(0, 0, tmp_width, tmp_height, 50, 50));
+			}
+			
+			gg.drawImage(cropped_target, 0, 0, null);
+			im = cropped;
+		}
+		JFrame testHSV = new JFrame("Test HSV");
+		ImgEffectOption ieo = new ImgEffectOption(im);
+		testHSV.setContentPane(ieo);
+		testHSV.addWindowListener(new WindowListener() {
+
+			@Override
+			public void windowActivated(WindowEvent arg0) {	}
+
+			@Override
+			public void windowClosed(WindowEvent arg0) { }
+
+			@Override
+			public void windowClosing(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				testHSV.dispose();
+			}
+
+			@Override
+			public void windowDeactivated(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowDeiconified(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowIconified(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void windowOpened(WindowEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			} 
+		});
+		testHSV.setSize(500, 700);
+		testHSV.setVisible(true);
+		
+	}		
 }

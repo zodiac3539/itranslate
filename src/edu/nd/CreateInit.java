@@ -26,4 +26,12 @@ public class CreateInit {
 		strb.append(" }");
 		return strb.toString();
 	}
+	
+	public String retAmb() {
+		StringBuffer strb = new StringBuffer();
+		strb.append("{    \"list\":[ \n");
+		strb.append("     { \"from\" : \"ひまり\", \"to\" : \"Himari\" , \"flag\" : 1}\n");
+		strb.append(" ]}");
+		return strb.toString();
+	}
 }
