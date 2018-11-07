@@ -103,7 +103,7 @@ public class ImgEffectOption extends JPanel {
 		
 		canvas.setPreferredSize(new Dimension(500, 300));
 
-		this.add(canvas, BorderLayout.PAGE_END);
+		this.add(canvas, BorderLayout.CENTER);
 		//this.setDefaultCloseOperation( JFrame.HIDE_ON_CLOSE );
 		/*
 		this.addWindowListener(new WindowAdapter(){
@@ -124,6 +124,7 @@ public class ImgEffectOption extends JPanel {
 		super();
 		this.bf = _bf;
         this.original = bf.getSubimage(0, 0, bf.getWidth(), bf.getHeight());
+        
 		this.canvas = new JPanel() {
 	        protected void paintComponent(Graphics g) {
 	        	Graphics2D g2d = (Graphics2D) g;
@@ -138,8 +139,9 @@ public class ImgEffectOption extends JPanel {
         };
         
 		init();	
-		
+		this.canvas.setPreferredSize(new Dimension( bf.getWidth(), bf.getHeight() ));
 		canvas.repaint();
+		canvas.revalidate();
 	}
 	
 	public void show() {

@@ -969,7 +969,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
 					
 					gg.drawImage(cropped_target, 0, 0, null);
 					String tmpname = System.getProperty("user.home") + File.separator + "temp.png";
-					JTesseract jt = new JTesseract();
+					//JTesseract jt = new JTesseract();
 						
 					if(arg == 65) { //a
 						ip.hsvfilter(cropped, tmpname, 1);
@@ -986,7 +986,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
 						ip.doit(cropped, tmpname);
 					}
 
-					String ret = jt.doOCR(tmpname);
+					String ret = JTesseract.doOCR(tmpname);
 					ret = ret.replace("", "");
 					ret = StringUtil.BlackListFilter(ret);
 					consolidated = consolidated + " " +ret;

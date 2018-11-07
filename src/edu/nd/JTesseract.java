@@ -11,7 +11,7 @@ public class JTesseract {
     	
     }
     
-    public synchronized String doOCR(String name) {
+    public static synchronized String doOCR(String name) {
     	String ret = "";
     	try {
         	Runtime rt = Runtime.getRuntime();
