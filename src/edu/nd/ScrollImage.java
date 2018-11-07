@@ -83,6 +83,7 @@ public class ScrollImage extends JPanel implements ActionListener  {
 
     private boolean subtitleOn = false;
     private JScrollPane jtableScroll = null;
+    private Object syncObj = new Object();
     
     public synchronized void presentMessage(String _msg) {
     	_msg = StringUtil.reverseEscape(_msg);
@@ -575,12 +576,6 @@ public class ScrollImage extends JPanel implements ActionListener  {
     private void drawSubtitle(Graphics2D g2d) {
     	if(!subtitleOn) return;
 
-    	//File current = filelist.get(crtnum);
-		//String fname = current.getName() + ".json";
-		//String dir = current.getParent();
-		
-		//String fullname = dir + File.separator + fname;
-		
     	Iterator<TranslateVO> it = ttable.getTranslateList().iterator();
     	getSubtitleFont(g2d);
     	while(it.hasNext()) {
@@ -594,21 +589,23 @@ public class ScrollImage extends JPanel implements ActionListener  {
     		int original_y = y;
     		output = StringUtil.reverseEscape(output);
     		output = getLineBreak(output);
-    		
+    		int totalwidth = 0;
+    		for( int tmpWidth: g2d.getFontMetrics().getWidths() ) {
+        		if(tmpWidth > totalwidth) {
+        			totalwidth = tmpWidth;
+        		}
+        	}
         	for(int i=1;i<=3;i++) {
         		y = original_y;
         		for (String line : output.split("\n")) {
-                	g2d.setColor(new Color(200, 200, 200, 70));
-                	int totalwidth = 0;
-                	for( int tmpWidth: g2d.getFontMetrics().getWidths() ) {
-                		if(tmpWidth > totalwidth) {
-                			totalwidth = tmpWidth;
-                		}
-                	}
+                	g2d.setColor(new Color(210, 210, 210, 80));
+                	
+
+                	int boxWidth = (int)((double)totalwidth * 0.4 * (double)line.getBytes().length);
         			g2d.fillRect(x - 5, 
         					     y - (int)(g2d.getFontMetrics().getHeight() * 0.8 ),
-        					     totalwidth * ImageViewer.linebreak, 
-        					     (int)(g2d.getFontMetrics().getHeight() * 1.1));
+        					     boxWidth, 
+        					     (int)(g2d.getFontMetrics().getHeight() * 1.05));
         			//g2d.drawString(line, x, y += g2d.getFontMetrics().getHeight());        			
                 	g2d.setColor(Color.WHITE);
 
@@ -937,60 +934,67 @@ public class ScrollImage extends JPanel implements ActionListener  {
 		Thread t1 = new Thread() {
 			public void run() {
 				String consolidated = "";
-				for (ChoiShape targetshape : trlist) {
-					int cropx = (int) targetshape.getShape().getBounds2D().getX();
-					int cropy = (int) targetshape.getShape().getBounds2D().getY();
-					int tmp_width = (int) targetshape.getShape().getBounds2D().getWidth();
-					int tmp_height = (int) targetshape.getShape().getBounds2D().getHeight();
-					if(tmp_width == 0) {
-						JOptionPane.showMessageDialog(sp,
-							    "There is something wrong with the selection box.");
-						presentMessage("");
-						return;
-					}
+				synchronized(syncObj) {
 
-					BufferedImage cropped_target = image.getSubimage(cropx, 
-															  cropy, 
-															  tmp_width, 
-															  tmp_height);
-				
-					BufferedImage cropped = new BufferedImage(tmp_width, tmp_height, BufferedImage.TYPE_INT_ARGB);
-					Graphics gg = cropped.getGraphics();
+					for (ChoiShape targetshape : trlist) {
+						int cropx = (int) targetshape.getShape().getBounds2D().getX();
+						int cropy = (int) targetshape.getShape().getBounds2D().getY();
+						int tmp_width = (int) targetshape.getShape().getBounds2D().getWidth();
+						int tmp_height = (int) targetshape.getShape().getBounds2D().getHeight();
+						if(tmp_width == 0) {
+							JOptionPane.showMessageDialog(sp,
+								    "There is something wrong with the selection box.");
+							presentMessage("");
+							return;
+						}
+	
+						BufferedImage cropped_target = image.getSubimage(cropx, 
+																  cropy, 
+																  tmp_width, 
+																  tmp_height);
 					
-					if (arg == 73) gg.setColor(Color.BLACK); //I
-					else gg.setColor(Color.WHITE);
-					
-					gg.fillRect(0, 0, tmp_width, tmp_height);
-					if(targetshape.getForm() == EnumCollection.SelectionShape.Circle) {
-						gg.setClip(new Ellipse2D.Double(0, 0, tmp_width, tmp_height));
-					} else if (targetshape.getForm() == EnumCollection.SelectionShape.RRectangle) {
-						gg.setClip(new RoundRectangle2D.Double(0, 0, tmp_width, tmp_height, 50, 50));
-					}
-					
-					gg.drawImage(cropped_target, 0, 0, null);
-					String tmpname = System.getProperty("user.home") + File.separator + "temp.png";
-					//JTesseract jt = new JTesseract();
+						BufferedImage cropped = new BufferedImage(tmp_width, tmp_height, BufferedImage.TYPE_INT_ARGB);
+						Graphics gg = cropped.getGraphics();
 						
-					if(arg == 65) { //a
-						ip.hsvfilter(cropped, tmpname, 1);
-					} else if(arg == 83) { // s
-						ip.hsvfilter(cropped, tmpname, 2);
-					} else if(arg == 68) { // d
-						ip.hsvfilter(cropped, tmpname, 3);
-					} else if(arg == 90) { // z
-						ip.doitWithoutOstu(cropped, tmpname);
-					} else if(arg == 73) { // i
-						ip.doitInverse(cropped, tmpname); 
-						//ip.doitWithoutOstu(cropped, tmpname);
-					} else { // Normally x
-						ip.doit(cropped, tmpname);
-					}
-
-					String ret = JTesseract.doOCR(tmpname);
-					ret = ret.replace("", "");
-					ret = StringUtil.BlackListFilter(ret);
-					consolidated = consolidated + " " +ret;
-				}
+						if (arg == 73) gg.setColor(Color.BLACK); //I
+						else gg.setColor(Color.WHITE);
+						
+						gg.fillRect(0, 0, tmp_width, tmp_height);
+						if(targetshape.getForm() == EnumCollection.SelectionShape.Circle) {
+							gg.setClip(new Ellipse2D.Double(0, 0, tmp_width, tmp_height));
+						} else if (targetshape.getForm() == EnumCollection.SelectionShape.RRectangle) {
+							gg.setClip(new RoundRectangle2D.Double(0, 0, tmp_width, tmp_height, 50, 50));
+						}
+						
+						gg.drawImage(cropped_target, 0, 0, null);
+						String tmpname = System.getProperty("user.home") + File.separator + "temp.png";
+						//JTesseract jt = new JTesseract();
+							
+						if(arg == 65) { //a
+							ip.hsvfilter(cropped, tmpname, 1);
+						} else if(arg == 83) { // s
+							ip.hsvfilter(cropped, tmpname, 2);
+						} else if(arg == 68) { // d
+							ip.hsvfilter(cropped, tmpname, 3);
+						} else if(arg == 90) { // z
+							ip.doitWithoutOstu(cropped, tmpname);
+						} else if(arg == 73) { // i
+							ip.doitInverse(cropped, tmpname); 
+							//ip.doitWithoutOstu(cropped, tmpname);
+						} else { // Normally x
+							ip.doit(cropped, tmpname);
+						}
+	
+						String ret = JTesseract.doOCR(tmpname);
+						ret = ret.replace("", "");
+						ret = StringUtil.BlackListFilter(ret);
+						if(ret != null && ret.length() > 0) ret = ret.trim();
+						consolidated = consolidated + " " +ret;
+						
+						
+					} // for
+				} // synchronized
+				
 				final String target_translate = consolidated;				
 				presentSysMessage("Translating...");
 				String translated = "";

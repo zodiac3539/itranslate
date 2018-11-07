@@ -83,6 +83,7 @@ public class SubtitleEditor extends JPanel {
 						String org = gt.translate(txt_original.getText());
 						txt_translate.setText(org);						
 						btn_translate.setEnabled(true);
+						
 					}
 				};
 				t.run();				
