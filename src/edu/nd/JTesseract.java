@@ -18,7 +18,13 @@ public class JTesseract {
         	// --psm 5 --oem 1
         	String output = System.getProperty("user.home") + File.separator + "output";
         	String tess_exec = ImageViewer.tesseract;
-        	String[] options = ImageViewer.option.split(";");
+        	
+        	String[] options = null;
+        	if (ImageViewer.tesser_option == 1) {
+        		options = ImageViewer.option.split(";");
+        	} else {
+        		options = ImageViewer.option2.split(";");
+        	}
         	String[] commands = {tess_exec, name, output};
         	String[] com = new String[options.length + commands.length];
         	

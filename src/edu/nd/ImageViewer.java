@@ -35,9 +35,12 @@ import org.json.JSONArray;
 import javafx.scene.image.ImageView;
 
 public class ImageViewer {
+	private static File crt = null;
 	public static boolean autocontour = false;
 	public static String tesseract = "tesseract.exe";
 	public static String option = "-l;jpn";
+	public static String option2 = "-l;jpn";
+	public static int tesser_option = 1;
 	public static String lowhsv1 = "0,0,0";
 	public static String highhsv1 = "255,255,255";
 	public static String lowhsv2 = "0,0,0";
@@ -149,6 +152,7 @@ public class ImageViewer {
 			JSONObject jobj = jl.loadJson(settingFile);
 			tesseract = jobj.getString("tesseract");
 			option = jobj.getString("option");
+			option2 = jobj.getString("option2");
 			default_width = jobj.getInt("defaultWidth");
 			default_height = jobj.getInt("defaultHeight");
 			lowhsv1 = jobj.getString("lowhsv1");
@@ -202,9 +206,10 @@ public class ImageViewer {
                     {   
         	    		text.append( files[i].getCanonicalPath() + "\n" );
         	    		p = new ScrollImage(files[i].getCanonicalPath());
+        	    		crt = new File(files[i].getCanonicalPath());
         	    		//JFrame f = new JFrame("Imageviewer");
                         f.setContentPane(p);
-                      
+                        MenuSelection imp = new MenuSelection();                      
                         JMenuBar menubar = new JMenuBar();
                         
                         //menubar.setFont(ImgFront.getFont(15));
@@ -214,6 +219,8 @@ public class ImageViewer {
                         next_file.addActionListener(p);
                         JMenuItem previous_file = new JMenuItem("Previous file");
                         previous_file.addActionListener(p);
+                        JMenuItem export = new JMenuItem("Export with JPG");
+                        export.addActionListener(imp);
                         
                         JMenu menu = new JMenu("Zoom");
                         JMenuItem full_zoom = new JMenuItem("Normal zoom");
@@ -278,7 +285,6 @@ public class ImageViewer {
                         cselection.addActionListener(p);     
                         cselection.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
 
-                        MenuSelection imp = new MenuSelection();
                         ButtonGroup directionGroup1 = new ButtonGroup();
                         JRadioButtonMenuItem autoon = new JRadioButtonMenuItem("Auto find contour on");
                         autoon.addActionListener(imp);     
@@ -322,6 +328,13 @@ public class ImageViewer {
                         hsv3.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0));
                         JMenuItem testhsv = new JMenuItem("Test HSV");
                         testhsv.addActionListener(p);    
+                        ButtonGroup tessOption = new ButtonGroup();
+                        JRadioButtonMenuItem tessOption1 = new JRadioButtonMenuItem("Tesseract Option 1", true);
+                        tessOption1.addActionListener(imp);
+                        JRadioButtonMenuItem tessOption2 = new JRadioButtonMenuItem("Tesseract Option 2");
+                        tessOption2.addActionListener(imp);
+                        tessOption.add(tessOption1);
+                        tessOption.add(tessOption2);
                         
                         JMenu menu5 = new JMenu("Subtitle");
                         JMenuItem showsubtitle = new JMenuItem("Show subtitle");
@@ -352,6 +365,7 @@ public class ImageViewer {
                         
                         menu0.add(next_file);
                         menu0.add(previous_file);
+                        menu0.add(export);
                         
                         menu.add(full_zoom);
                         menu.add(width_zoom);
@@ -394,7 +408,10 @@ public class ImageViewer {
                         menu4.add(hsv2);
                         menu4.add(hsv3);
                         menu4.add(testhsv);
-                        
+                        menu4.addSeparator();
+                        menu4.add(tessOption1);
+                        menu4.add(tessOption2);
+                                                
                         menu5.add(showsubtitle);
                         menu5.add(hidesubtitle);
                         menu5.add(savesubtitle);
@@ -446,6 +463,12 @@ public class ImageViewer {
     	frm = f.getHeight();
     	
     	return frm;
+    }
+    
+    public static String getCurrentDirectory() {
+    	String ret = "";
+    	ret = crt.getParent();
+    	return ret;
     }
 
 }
